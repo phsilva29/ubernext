@@ -27,7 +27,7 @@ const UberCalculator = () => {
     kmDriven: '',
     gasPrice: '',
     fuelConsumption: '',
-    pricePerKm: ''
+    dailyIncome: ''
   });
 
   // Estados para comparação de combustíveis
@@ -62,15 +62,15 @@ const UberCalculator = () => {
     const km = parseFloat(uberData.kmDriven);
     const gasPrice = parseFloat(uberData.gasPrice);
     const consumption = parseFloat(uberData.fuelConsumption);
-    const pricePerKm = parseFloat(uberData.pricePerKm);
+    const dailyIncome = parseFloat(uberData.dailyIncome);
 
-    if (!km || !gasPrice || !consumption || !pricePerKm) {
+    if (!km || !gasPrice || !consumption || !dailyIncome) {
       alert('Preencha todos os campos com valores válidos');
       return;
     }
 
     const fuelCost = (km / consumption) * gasPrice;
-    const totalIncome = km * pricePerKm;
+    const totalIncome = dailyIncome;
     const netProfit = totalIncome - fuelCost;
     const profitPerKm = netProfit / km;
 
@@ -127,7 +127,7 @@ const UberCalculator = () => {
       kmDriven: '',
       gasPrice: '',
       fuelConsumption: '',
-      pricePerKm: ''
+      dailyIncome: ''
     });
     setUberResults(null);
   };
@@ -222,13 +222,13 @@ const UberCalculator = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="pricePerKm" className="text-card-foreground">Valor pago por km (R$)</Label>
+                  <Label htmlFor="dailyIncome" className="text-card-foreground">Valor feito no dia (R$)</Label>
                   <Input
-                    id="pricePerKm"
+                    id="dailyIncome"
                     type="text"
-                    placeholder="Ex: 1.25"
-                    value={uberData.pricePerKm}
-                    onChange={(e) => handleUberInputChange('pricePerKm', e.target.value)}
+                    placeholder="Ex: 150.00"
+                    value={uberData.dailyIncome}
+                    onChange={(e) => handleUberInputChange('dailyIncome', e.target.value)}
                     className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground"
                   />
                 </div>
