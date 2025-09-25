@@ -234,36 +234,46 @@ export function Dashboard({ dados }: DashboardProps) {
                 ]}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
+                innerRadius={70}
                 outerRadius={140}
-                paddingAngle={2}
+                paddingAngle={3}
                 dataKey="value"
+                stroke="none"
               >
                 {[
                   { name: 'Ganhos', value: dados.totalGanhos, color: '#22c55e' },
                   { name: 'Gastos', value: dados.totalGastos, color: '#ef4444' },
                   { name: 'Lucro', value: dados.lucroTotal, color: '#3b82f6' }
                 ].map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                 ))}
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
+                  backgroundColor: 'hsl(var(--popover))',
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                  color: 'hsl(var(--popover-foreground))',
+                  fontSize: '14px',
+                  fontWeight: '500'
                 }}
-                formatter={(value: number) => [`R$ ${value.toFixed(2)}`, undefined]}
+                formatter={(value: number, name: string) => [
+                  `R$ ${value.toFixed(2)}`, 
+                  <span style={{ color: 'hsl(var(--popover-foreground))' }}>{name}</span>
+                ]}
+                labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
               />
               <Legend
                 verticalAlign="bottom"
-                height={36}
+                height={50}
+                iconType="circle"
                 formatter={(value, entry) => (
-                  <span className="text-sm font-medium" style={{ color: entry.color }}>
+                  <span className="text-sm font-medium ml-2" style={{ color: entry.color }}>
                     {value}
                   </span>
                 )}
+                wrapperStyle={{ paddingTop: '20px' }}
               />
             </PieChart>
           </ResponsiveContainer>
