@@ -5,7 +5,7 @@ import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState, useEffect } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2 } from "lucide-react";
+import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2, DollarSign, TrendingUp, TrendingDown, Car, Fuel, Route } from "lucide-react";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import ViagemService from "@/services/ViagemService";
@@ -118,62 +118,88 @@ export function Dashboard({ dados }: DashboardProps) {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {/* Cards de Resumo */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Ganhos</CardTitle>
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Cards de Resumo com melhor visibilidade */}
+      <Card className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Total de Ganhos</CardTitle>
+          <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">R$ {dados.totalGanhos.toFixed(2)}</div>
-          <p className="text-xs text-muted-foreground">
-            Em {dados.totalViagens} viagens
+        <CardContent className="relative">
+          <div className="text-3xl font-bold text-green-600 mb-1">
+            R$ {dados.totalGanhos.toFixed(2)}
+          </div>
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
+            <Car className="h-3 w-3" />
+            {dados.totalViagens} viagens realizadas
           </p>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Gastos</CardTitle>
+      <Card className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/5"></div>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Total de Gastos</CardTitle>
+          <div className="h-8 w-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+            <Fuel className="h-4 w-4 text-red-600" />
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">R$ {dados.totalGastos.toFixed(2)}</div>
-          <p className="text-xs text-muted-foreground">
-            Com combustível
+        <CardContent className="relative">
+          <div className="text-3xl font-bold text-red-600 mb-1">
+            R$ {dados.totalGastos.toFixed(2)}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Combustível consumido
           </p>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Lucro Total</CardTitle>
+      <Card className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
+          <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+            <DollarSign className="h-4 w-4 text-blue-600" />
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">R$ {dados.lucroTotal.toFixed(2)}</div>
-          <p className="text-xs text-muted-foreground">
-            Média: R$ {(dados.lucroTotal / dados.totalViagens).toFixed(2)}/viagem
+        <CardContent className="relative">
+          <div className="text-3xl font-bold text-blue-600 mb-1">
+            R$ {dados.lucroTotal.toFixed(2)}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Média: R$ {(dados.lucroTotal / dados.totalViagens).toFixed(2)} por viagem
           </p>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Média por KM</CardTitle>
+      <Card className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-600/5"></div>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Lucro por KM</CardTitle>
+          <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+            <Route className="h-4 w-4 text-purple-600" />
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">R$ {dados.mediaLucroPorKm.toFixed(2)}</div>
-          <p className="text-xs text-muted-foreground">
-            Total: {dados.totalKmRodados.toFixed(0)} km
+        <CardContent className="relative">
+          <div className="text-3xl font-bold text-purple-600 mb-1">
+            R$ {dados.mediaLucroPorKm.toFixed(2)}
+          </div>
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
+            <Route className="h-3 w-3" />
+            {dados.totalKmRodados.toFixed(0)} km percorridos
           </p>
         </CardContent>
       </Card>
 
       {/* Gráficos */}
       <Card className="col-span-full">
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-          <div className="space-y-1">
-            <CardTitle>Histórico de Resultados</CardTitle>
-            <p className="text-sm text-muted-foreground">
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 pb-6">
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-bold">Análise de Resultados</CardTitle>
+            <p className="text-muted-foreground">
               Visualize seus ganhos, gastos e lucros por período
             </p>
           </div>
@@ -183,15 +209,15 @@ export function Dashboard({ dados }: DashboardProps) {
             onValueChange={(value: PeriodoVisualizacao) => setPeriodoVisualizacao(value)} 
             className="justify-start"
           >
-            <ToggleGroupItem value="diario" aria-label="Ver por dia" className="gap-2">
+            <ToggleGroupItem value="diario" aria-label="Ver por dia" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">Diário</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="semanal" aria-label="Ver por semana" className="gap-2">
+            <ToggleGroupItem value="semanal" aria-label="Ver por semana" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
               <CalendarDays className="h-4 w-4" />
               <span className="hidden sm:inline">Semanal</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="mensal" aria-label="Ver por mês" className="gap-2">
+            <ToggleGroupItem value="mensal" aria-label="Ver por mês" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
               <CalendarIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Mensal</span>
             </ToggleGroupItem>
@@ -246,7 +272,11 @@ export function Dashboard({ dados }: DashboardProps) {
 
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle>Preço da Gasolina</CardTitle>
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-red-600" />
+            Histórico do Preço da Gasolina
+          </CardTitle>
+          <p className="text-muted-foreground">Acompanhe a variação dos preços ao longo do tempo</p>
         </CardHeader>
         <CardContent className="pl-2">
           <ResponsiveContainer width="100%" height={350}>
@@ -262,7 +292,11 @@ export function Dashboard({ dados }: DashboardProps) {
 
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle>Histórico de Viagens</CardTitle>
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            <Car className="h-5 w-5 text-blue-600" />
+            Histórico Detalhado de Viagens
+          </CardTitle>
+          <p className="text-muted-foreground">Visualize e gerencie todas as suas viagens registradas</p>
         </CardHeader>
         <CardContent>
           <div className="w-full overflow-auto">
