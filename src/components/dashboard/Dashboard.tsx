@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Line, LineChart, Legend } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Line, LineChart, Legend, PieChart, Pie, Cell } from "recharts";
 import { DadosDashboard, Viagem } from "@/types";
 import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -168,8 +168,61 @@ export function Dashboard({ dados }: DashboardProps) {
         </CardContent>
       </Card>
 
+      {/* Gráfico de Distribuição */}
+      <Card className="col-span-full lg:col-span-2">
+        <CardHeader>
+          <CardTitle>Distribuição de Ganhos vs Gastos</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Proporção entre ganhos e gastos totais
+          </p>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Ganhos', value: dados.totalGanhos, color: '#8b5cf6' },
+                  { name: 'Gastos', value: dados.totalGastos, color: '#a78bfa' }
+                ]}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={120}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {[
+                  { name: 'Ganhos', value: dados.totalGanhos, color: '#8b5cf6' },
+                  { name: 'Gastos', value: dados.totalGastos, color: '#a78bfa' }
+                ].map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+                formatter={(value: number) => [`R$ ${value.toFixed(2)}`, undefined]}
+              />
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                formatter={(value, entry) => (
+                  <span className="text-sm font-medium" style={{ color: entry.color }}>
+                    {value}
+                  </span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
       {/* Gráficos */}
-      <Card className="col-span-full">
+      <Card className="col-span-full lg:col-span-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
           <div className="space-y-1">
             <CardTitle>Histórico de Resultados</CardTitle>
