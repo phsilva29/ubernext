@@ -250,29 +250,30 @@ export function Dashboard({ dados }: DashboardProps) {
             </ToggleGroupItem>
           </ToggleGroup>
         </CardHeader>
-        <CardContent className="pl-2">
+        <CardContent className="flex justify-center">
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart 
-              data={dadosFiltrados} 
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <XAxis 
-                dataKey="mes" 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                interval={0}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                width={80}
-                tickFormatter={(value) => `R$ ${value.toFixed(0)}`}
-              />
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Ganhos', value: dados.totalGanhos, color: '#22c55e' },
+                  { name: 'Gastos', value: dados.totalGastos, color: '#ef4444' },
+                  { name: 'Lucro', value: dados.lucroTotal, color: '#3b82f6' }
+                ]}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={140}
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {[
+                  { name: 'Ganhos', value: dados.totalGanhos, color: '#22c55e' },
+                  { name: 'Gastos', value: dados.totalGastos, color: '#ef4444' },
+                  { name: 'Lucro', value: dados.lucroTotal, color: '#3b82f6' }
+                ].map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
@@ -281,43 +282,17 @@ export function Dashboard({ dados }: DashboardProps) {
                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                 }}
                 formatter={(value: number) => [`R$ ${value.toFixed(2)}`, undefined]}
-                cursor={{ fill: 'hsl(var(--muted))' }}
               />
               <Legend
-                verticalAlign="top"
+                verticalAlign="bottom"
                 height={36}
-                formatter={(value) => (
-                  <span className="text-sm font-medium" style={{ 
-                    color: value === "Ganhos" ? '#22c55e' : 
-                           value === "Gastos" ? '#ef4444' : 
-                           '#3b82f6'
-                  }}>
+                formatter={(value, entry) => (
+                  <span className="text-sm font-medium" style={{ color: entry.color }}>
                     {value}
                   </span>
                 )}
               />
-              <Bar 
-                dataKey="ganhos" 
-                name="Ganhos" 
-                fill="#22c55e"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar 
-                dataKey="gastos" 
-                name="Gastos" 
-                fill="#ef4444"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar 
-                dataKey="lucro" 
-                name="Lucro" 
-                fill="#3b82f6"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={40}
-              />
-            </BarChart>
+            </PieChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
