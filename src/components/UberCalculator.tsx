@@ -269,7 +269,7 @@ const UberCalculator = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="gasPrice" className="text-card-foreground">Preço da gasolina (R$)</Label>
                     <Input
@@ -340,7 +340,7 @@ const UberCalculator = () => {
                       <span className="h-8 w-1 bg-primary rounded-full"/>
                       Resultados da Viagem
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                       {/* Card de Gastos */}
                       <div className="bg-red-500/10 p-6 rounded-xl border border-red-200/20 flex flex-col">
                         <span className="text-sm font-medium text-red-600 dark:text-red-400">Custos</span>
@@ -405,7 +405,7 @@ const UberCalculator = () => {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ethanolPrice" className="text-card-foreground">Preço do Etanol (R$)</Label>
                   <Input
@@ -431,7 +431,7 @@ const UberCalculator = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="gasolinePrice" className="text-card-foreground">Preço da Gasolina (R$)</Label>
                   <Input
@@ -515,7 +515,7 @@ const UberCalculator = () => {
                             Melhor opção: {comparison.bestOption}
                           </div>
                         </div>
-                        <div className="grid md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                           <div className="bg-red-500/10 p-4 rounded-lg border border-red-200/20">
                             <p className="text-sm font-medium text-red-600 dark:text-red-400">Custo Etanol</p>
                             <p className="text-xl font-semibold text-red-600 dark:text-red-400 mt-1">

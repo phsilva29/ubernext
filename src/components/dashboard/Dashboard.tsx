@@ -246,145 +246,150 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 transition-all duration-300 ease-in-out">
-      {/* Cards de Resumo dinâmicos */}
-      <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Total de Ganhos</CardTitle>
-          <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </div>
-        </CardHeader>
-        <CardContent className="relative">
-          {(() => {
-            const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-            if (!periodo) {
-              return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
-            }
-            return <>
-              <div className="text-3xl font-bold text-green-600 mb-1 transition-all duration-300 ease-in-out transform">
-                R$ {periodo.ganhos.toFixed(2)}
-              </div>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Car className="h-3 w-3" />
-                {periodo.kmRodados.toFixed(0)} km considerados
-              </p>
-            </>;
-          })()}
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      {/* Cards de resumo responsivos */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 transition-all duration-300 ease-in-out">
+        {/* Cards de Resumo dinâmicos */}
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Ganhos</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            {(() => {
+              const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+              if (!periodo) {
+                return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
+              }
+              return <>
+                <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-1 transition-all duration-300 ease-in-out transform">
+                  R$ {periodo.ganhos.toFixed(2)}
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+                  <Car className="h-3 w-3" />
+                  {periodo.kmRodados.toFixed(0)} km considerados
+                </p>
+              </>;
+            })()}
+          </CardContent>
+        </Card>
 
-      <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/5"></div>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Total de Gastos</CardTitle>
-          <div className="h-8 w-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-            <Fuel className="h-4 w-4 text-red-600" />
-          </div>
-        </CardHeader>
-        <CardContent className="relative">
-          {(() => {
-            const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-            if (!periodo) {
-              return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
-            }
-            return <>
-              <div className="text-3xl font-bold text-red-600 mb-1">
-                R$ {periodo.gastos.toFixed(2)}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Combustível consumido
-              </p>
-            </>;
-          })()}
-        </CardContent>
-      </Card>
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/5"></div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Gastos</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+              <Fuel className="h-4 w-4 text-red-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            {(() => {
+              const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+              if (!periodo) {
+                return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
+              }
+              return <>
+                <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-1">
+                  R$ {periodo.gastos.toFixed(2)}
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Combustível consumido
+                </p>
+              </>;
+            })()}
+          </CardContent>
+        </Card>
 
-      <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
-          <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-            <DollarSign className="h-4 w-4 text-blue-600" />
-          </div>
-        </CardHeader>
-        <CardContent className="relative">
-          {(() => {
-            const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-            if (!periodo) {
-              return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
-            }
-            return <>
-              <div className="text-3xl font-bold text-blue-600 mb-1">
-                R$ {periodo.lucro.toFixed(2)}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Média: R$ {periodo.lucro.toFixed(2)} por viagem
-              </p>
-            </>;
-          })()}
-        </CardContent>
-      </Card>
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+              <DollarSign className="h-4 w-4 text-blue-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            {(() => {
+              const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+              if (!periodo) {
+                return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
+              }
+              return <>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1">
+                  R$ {periodo.lucro.toFixed(2)}
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Média: R$ {periodo.lucro.toFixed(2)} por viagem
+                </p>
+              </>;
+            })()}
+          </CardContent>
+        </Card>
 
-      <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-600/5"></div>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Lucro por KM</CardTitle>
-          <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-            <Route className="h-4 w-4 text-purple-600" />
-          </div>
-        </CardHeader>
-        <CardContent className="relative">
-          {(() => {
-            const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-            if (!periodo) {
-              return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
-            }
-            return <>
-              <div className="text-3xl font-bold text-purple-600 mb-1">
-                R$ {periodo.kmRodados > 0 ? (periodo.lucro / periodo.kmRodados).toFixed(2) : '0.00'}
-              </div>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Route className="h-3 w-3" />
-                {periodo.kmRodados.toFixed(0)} km percorridos
-              </p>
-            </>;
-          })()}
-        </CardContent>
-      </Card>
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-600/5"></div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Lucro por KM</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+              <Route className="h-4 w-4 text-purple-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            {(() => {
+              const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+              if (!periodo) {
+                return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
+              }
+              return <>
+                <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-1">
+                  R$ {periodo.kmRodados > 0 ? (periodo.lucro / periodo.kmRodados).toFixed(2) : '0.00'}
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+                  <Route className="h-3 w-3" />
+                  {periodo.kmRodados.toFixed(0)} km percorridos
+                </p>
+              </>;
+            })()}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Gráficos */}
-      <Card className="col-span-full">
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 pb-6">
-          <div className="space-y-2">
-            <CardTitle className="text-2xl font-bold">Análise de Resultados</CardTitle>
-            <p className="text-muted-foreground">
-              Visualize seus ganhos, gastos e lucros por período
-            </p>
+      <Card className="w-full">
+        <CardHeader className="flex flex-col space-y-4 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-2">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Análise de Resultados</CardTitle>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Visualize seus ganhos, gastos e lucros por período
+              </p>
+            </div>
+            <ToggleGroup 
+              type="single" 
+              value={periodoVisualizacao} 
+              onValueChange={(value: PeriodoVisualizacao) => setPeriodoVisualizacao(value)} 
+              className="flex justify-start sm:justify-center transition-all duration-300 ease-in-out"
+            >
+              <ToggleGroupItem value="diario" aria-label="Ver por dia" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
+                <Clock className="h-4 w-4" />
+                <span className="hidden sm:inline">Diário</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="semanal" aria-label="Ver por semana" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
+                <CalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">Semanal</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="mensal" aria-label="Ver por mês" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
+                <CalendarIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Mensal</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
-          <ToggleGroup 
-            type="single" 
-            value={periodoVisualizacao} 
-            onValueChange={(value: PeriodoVisualizacao) => setPeriodoVisualizacao(value)} 
-            className="justify-start transition-all duration-300 ease-in-out"
-          >
-            <ToggleGroupItem value="diario" aria-label="Ver por dia" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
-              <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Diário</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="semanal" aria-label="Ver por semana" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
-              <CalendarDays className="h-4 w-4" />
-              <span className="hidden sm:inline">Semanal</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="mensal" aria-label="Ver por mês" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
-              <CalendarIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Mensal</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={350}>
             <PieChart>
               <Pie
                 data={(() => {
@@ -485,16 +490,18 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
         </CardContent>
       </Card>
 
-      <Card className="col-span-full">
+      {/* Tabela de Viagens Responsiva */}
+      <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
+          <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
             <Car className="h-5 w-5 text-blue-600" />
             Histórico Detalhado de Viagens
           </CardTitle>
-          <p className="text-muted-foreground">Visualize e gerencie todas as suas viagens registradas</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Visualize e gerencie todas as suas viagens registradas</p>
         </CardHeader>
         <CardContent>
-          <div className="w-full overflow-auto">
+          {/* Versão Desktop */}
+          <div className="hidden md:block w-full overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -516,8 +523,8 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
                     <TableCell>R$ {viagem.precoGasolina.toFixed(2)}</TableCell>
                     <TableCell>{viagem.consumo} km/L</TableCell>
                     <TableCell>R$ {viagem.valorGanho.toFixed(2)}</TableCell>
-                    <TableCell>R$ {viagem.gastosCombustivel.toFixed(2)}</TableCell>
-                    <TableCell>R$ {viagem.lucroLiquido.toFixed(2)}</TableCell>
+                    <TableCell>R$ {viagem.gastosCombustivel?.toFixed(2)}</TableCell>
+                    <TableCell>R$ {viagem.lucroLiquido?.toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
@@ -530,7 +537,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleExcluir(viagem.id)}
+                          onClick={() => handleExcluir(viagem.id!)}
                           className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -541,6 +548,59 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Versão Mobile */}
+          <div className="md:hidden space-y-4">
+            {dados.viagens?.map((viagem) => (
+              <Card key={viagem.id} className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-medium text-sm">
+                      {format(new Date(viagem.data), 'dd/MM/yyyy')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {viagem.kmRodados} km • {viagem.consumo} km/L
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditar(viagem)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExcluir(viagem.id!)}
+                      className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Ganhos:</span>
+                    <p className="font-medium text-green-600">R$ {viagem.valorGanho.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Gastos:</span>
+                    <p className="font-medium text-red-600">R$ {viagem.gastosCombustivel?.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Lucro:</span>
+                    <p className="font-medium text-blue-600">R$ {viagem.lucroLiquido?.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Combustível:</span>
+                    <p className="font-medium">R$ {viagem.precoGasolina.toFixed(2)}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </CardContent>
       </Card>

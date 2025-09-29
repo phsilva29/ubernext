@@ -33,27 +33,28 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold text-foreground mb-2">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        {/* Header responsivo */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+          <div className="text-center sm:text-left flex-1">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">
               Calculadora Uber
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm sm:text-lg">
               Calcule seus ganhos e gastos com combustível de forma prática
             </p>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
               <User className="h-4 w-4" />
-              {user.email}
+              <span className="truncate max-w-[200px]">{user.email}</span>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={signOut}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <LogOut className="h-4 w-4" />
               Sair
@@ -61,11 +62,15 @@ const Index = () => {
           </div>
         </div>
         
-        <div className="max-w-md mx-auto mb-8">
+        {/* Calculadora */}
+        <div className="max-w-md mx-auto mb-6 sm:mb-8">
           <UberCalculator />
         </div>
         
-        <Dashboard />
+        {/* Dashboard */}
+        <div className="w-full">
+          <Dashboard />
+        </div>
       </div>
     </div>
   );
