@@ -395,15 +395,14 @@ const UberCalculator = () => {
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <Card className="group relative overflow-hidden border-2 border-red-500/20 bg-gradient-to-br from-red-50/50 to-red-100/30 hover:border-red-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/10">
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-full -translate-y-10 translate-x-10"></div>
-                        <CardHeader className="pb-3 relative">
+                      <Card className="border hover:shadow-lg transition-all duration-300">
+                        <CardHeader className="pb-3">
                           <CardTitle className="text-sm font-semibold text-red-600 flex items-center gap-2">
                             <Fuel className="h-4 w-4" />
                             Custos com Combustível
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="relative">
+                        <CardContent>
                           <div className="flex items-baseline gap-2">
                             <span className="text-2xl font-bold text-red-600">
                               R$ {uberResults.fuelCost.toFixed(2)}
@@ -412,15 +411,14 @@ const UberCalculator = () => {
                         </CardContent>
                       </Card>
 
-                      <Card className="group relative overflow-hidden border-2 border-blue-500/20 bg-gradient-to-br from-blue-50/50 to-blue-100/30 hover:border-blue-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-full -translate-y-10 translate-x-10"></div>
-                        <CardHeader className="pb-3 relative">
+                      <Card className="border hover:shadow-lg transition-all duration-300">
+                        <CardHeader className="pb-3">
                           <CardTitle className="text-sm font-semibold text-blue-600 flex items-center gap-2">
                             <ArrowUp className="h-4 w-4" />
                             Ganhos Totais
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="relative">
+                        <CardContent>
                           <div className="flex items-baseline gap-2">
                             <span className="text-2xl font-bold text-blue-600">
                               R$ {uberResults.totalIncome.toFixed(2)}
@@ -429,15 +427,14 @@ const UberCalculator = () => {
                         </CardContent>
                       </Card>
 
-                      <Card className="group relative overflow-hidden border-2 border-green-500/20 bg-gradient-to-br from-green-50/50 to-green-100/30 hover:border-green-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/10">
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/5 rounded-full -translate-y-10 translate-x-10"></div>
-                        <CardHeader className="pb-3 relative">
+                      <Card className="border hover:shadow-lg transition-all duration-300">
+                        <CardHeader className="pb-3">
                           <CardTitle className="text-sm font-semibold text-green-600 flex items-center gap-2">
                             <CreditCard className="h-4 w-4" />
                             Lucro Líquido
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="relative">
+                        <CardContent>
                           <div className="flex items-baseline gap-2">
                             <span className="text-2xl font-bold text-green-600">
                               R$ {uberResults.netProfit.toFixed(2)}
@@ -446,15 +443,14 @@ const UberCalculator = () => {
                         </CardContent>
                       </Card>
 
-                      <Card className="group relative overflow-hidden border-2 border-emerald-500/20 bg-gradient-to-br from-emerald-50/50 to-emerald-100/30 hover:border-emerald-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10">
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-10 translate-x-10"></div>
-                        <CardHeader className="pb-3 relative">
+                      <Card className="border hover:shadow-lg transition-all duration-300">
+                        <CardHeader className="pb-3">
                           <CardTitle className="text-sm font-semibold text-emerald-600 flex items-center gap-2">
                             <Car className="h-4 w-4" />
                             Lucro por KM
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="relative">
+                        <CardContent>
                           <div className="flex items-baseline gap-2">
                             <span className="text-2xl font-bold text-emerald-600">
                               R$ {uberResults.profitPerKm.toFixed(2)}
