@@ -36,6 +36,94 @@ export function Dashboard({ dados }: DashboardProps) {
   const [periodoVisualizacao, setPeriodoVisualizacao] = useState<PeriodoVisualizacao>('mensal');
   const [dadosFiltrados, setDadosFiltrados] = useState<DadosGrafico[]>([]);
 
+  // Função para extrair a data do agrupamento
+  function extrairData(dados: DadosGrafico, periodo: PeriodoVisualizacao): Date {
+    function toBrasiliaDate(date: Date) {
+      // Ajusta para UTC-3 (Brasília)
+      return new Date(date.getTime() - 3 * 60 * 60 * 1000);
+    }
+    if (periodo === 'diario') {
+      const partes = dados.mes.split('/');
+      const dia = partes[0];
+      const mes = partes[1];
+      let ano = new Date().getFullYear();
+      if (partes.length === 3) ano = parseInt(partes[2]);
+      return toBrasiliaDate(new Date(ano, parseInt(mes) - 1, parseInt(dia)));
+    } else if (periodo === 'semanal') {
+      const [inicio] = dados.mes.split(' - ');
+      const partes = inicio.split('/');
+      const dia = partes[0];
+      const mes = partes[1];
+      let ano = new Date().getFullYear();
+      if (partes.length === 3) ano = parseInt(partes[2]);
+      return toBrasiliaDate(new Date(ano, parseInt(mes) - 1, parseInt(dia)));
+    } else {
+      let mesStr = '';
+      let anoStr = '';
+      if (dados.mes.includes('/')) {
+        [mesStr, anoStr] = dados.mes.split('/');
+      } else if (dados.mes.includes(' ')) {
+        [mesStr, anoStr] = dados.mes.split(' ');
+      }
+      const meses = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+      ];
+      const mesNum = meses.findIndex(m => mesStr.toLowerCase().startsWith(m));
+      return toBrasiliaDate(new Date(parseInt(anoStr), mesNum, 1));
+    }
+  }
+
+  function getPeriodoSelecionado(arr: DadosGrafico[], periodo: PeriodoVisualizacao): DadosGrafico | null {
+    if (!arr.length) return null;
+    let hoje = new Date();
+    hoje = new Date(hoje.getTime() - 3 * 60 * 60 * 1000);
+    const anoAtual = hoje.getFullYear();
+    if (periodo === 'diario') {
+      const dia = hoje.getDate().toString().padStart(2, '0');
+      const mes = (hoje.getMonth() + 1).toString().padStart(2, '0');
+      const chave = `${dia}/${mes}`;
+      return arr.find(d => d.mes.startsWith(chave)) || null;
+    } else if (periodo === 'semanal') {
+      // Busca semana que contém hoje
+      return arr.find(d => {
+        try {
+          const [inicio, fim] = d.mes.split(' - ');
+          const partesIni = inicio.split('/');
+          const partesFim = fim.split('/');
+          
+          // Se não tiver ano, usa o ano atual
+          let anoIni = hoje.getFullYear();
+          let anoFim = hoje.getFullYear();
+          
+          const diaIni = parseInt(partesIni[0]);
+          const mesIni = parseInt(partesIni[1]);
+          if (partesIni.length === 3) anoIni = parseInt(partesIni[2]);
+          
+          const diaFim = parseInt(partesFim[0]);
+          const mesFim = parseInt(partesFim[1]);
+          if (partesFim.length === 3) anoFim = parseInt(partesFim[2]);
+          
+          const dataIni = new Date(anoIni, mesIni - 1, diaIni);
+          const dataFim = new Date(anoFim, mesFim - 1, diaFim);
+          
+          return hoje >= dataIni && hoje <= dataFim;
+        } catch (error) {
+          console.error('Erro ao processar data semanal:', error);
+          return false;
+        }
+      }) || null;
+    } else {
+      // Mensal
+      const meses = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+      ];
+      const mesAtual = meses[hoje.getMonth()];
+      return arr.find(d => d.mes.toLowerCase().includes(mesAtual) && d.mes.includes(anoAtual.toString())) || null;
+    }
+  }
+
   const agruparDadosPorPeriodo = (viagens: Viagem[], periodo: PeriodoVisualizacao): DadosGrafico[] => {
     const dadosAgrupados = new Map<string, DadosGrafico>();
 
@@ -51,7 +139,7 @@ export function Dashboard({ dados }: DashboardProps) {
         case 'semanal': {
           const inicioSemana = startOfWeek(data, { locale: ptBR });
           const fimSemana = addDays(inicioSemana, 6);
-          chave = `${format(inicioSemana, 'dd/MM')} - ${format(fimSemana, 'dd/MM')}`;
+          chave = `${format(inicioSemana, 'dd/MM/yyyy')} - ${format(fimSemana, 'dd/MM/yyyy')}`;
           break;
         }
         case 'mensal':
@@ -118,8 +206,8 @@ export function Dashboard({ dados }: DashboardProps) {
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      {/* Cards de Resumo com melhor visibilidade */}
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 transition-all duration-300 ease-in-out">
+      {/* Cards de Resumo dinâmicos */}
       <Card className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
@@ -129,13 +217,21 @@ export function Dashboard({ dados }: DashboardProps) {
           </div>
         </CardHeader>
         <CardContent className="relative">
-          <div className="text-3xl font-bold text-green-600 mb-1">
-            R$ {dados.totalGanhos.toFixed(2)}
-          </div>
-          <p className="text-sm text-muted-foreground flex items-center gap-1">
-            <Car className="h-3 w-3" />
-            {dados.totalViagens} viagens realizadas
-          </p>
+          {(() => {
+            const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+            if (!periodo) {
+              return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
+            }
+            return <>
+              <div className="text-3xl font-bold text-green-600 mb-1 transition-all duration-300 ease-in-out transform">
+                R$ {periodo.ganhos.toFixed(2)}
+              </div>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Car className="h-3 w-3" />
+                {periodo.kmRodados.toFixed(0)} km considerados
+              </p>
+            </>;
+          })()}
         </CardContent>
       </Card>
 
@@ -148,12 +244,20 @@ export function Dashboard({ dados }: DashboardProps) {
           </div>
         </CardHeader>
         <CardContent className="relative">
-          <div className="text-3xl font-bold text-red-600 mb-1">
-            R$ {dados.totalGastos.toFixed(2)}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Combustível consumido
-          </p>
+          {(() => {
+            const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+            if (!periodo) {
+              return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
+            }
+            return <>
+              <div className="text-3xl font-bold text-red-600 mb-1">
+                R$ {periodo.gastos.toFixed(2)}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Combustível consumido
+              </p>
+            </>;
+          })()}
         </CardContent>
       </Card>
 
@@ -166,12 +270,20 @@ export function Dashboard({ dados }: DashboardProps) {
           </div>
         </CardHeader>
         <CardContent className="relative">
-          <div className="text-3xl font-bold text-blue-600 mb-1">
-            R$ {dados.lucroTotal.toFixed(2)}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Média: R$ {(dados.lucroTotal / dados.totalViagens).toFixed(2)} por viagem
-          </p>
+          {(() => {
+            const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+            if (!periodo) {
+              return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
+            }
+            return <>
+              <div className="text-3xl font-bold text-blue-600 mb-1">
+                R$ {periodo.lucro.toFixed(2)}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Média: R$ {periodo.lucro.toFixed(2)} por viagem
+              </p>
+            </>;
+          })()}
         </CardContent>
       </Card>
 
@@ -184,13 +296,21 @@ export function Dashboard({ dados }: DashboardProps) {
           </div>
         </CardHeader>
         <CardContent className="relative">
-          <div className="text-3xl font-bold text-purple-600 mb-1">
-            R$ {dados.mediaLucroPorKm.toFixed(2)}
-          </div>
-          <p className="text-sm text-muted-foreground flex items-center gap-1">
-            <Route className="h-3 w-3" />
-            {dados.totalKmRodados.toFixed(0)} km percorridos
-          </p>
+          {(() => {
+            const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+            if (!periodo) {
+              return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
+            }
+            return <>
+              <div className="text-3xl font-bold text-purple-600 mb-1">
+                R$ {periodo.kmRodados > 0 ? (periodo.lucro / periodo.kmRodados).toFixed(2) : '0.00'}
+              </div>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Route className="h-3 w-3" />
+                {periodo.kmRodados.toFixed(0)} km percorridos
+              </p>
+            </>;
+          })()}
         </CardContent>
       </Card>
 
@@ -207,17 +327,17 @@ export function Dashboard({ dados }: DashboardProps) {
             type="single" 
             value={periodoVisualizacao} 
             onValueChange={(value: PeriodoVisualizacao) => setPeriodoVisualizacao(value)} 
-            className="justify-start"
+            className="justify-start transition-all duration-300 ease-in-out"
           >
-            <ToggleGroupItem value="diario" aria-label="Ver por dia" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <ToggleGroupItem value="diario" aria-label="Ver por dia" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">Diário</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="semanal" aria-label="Ver por semana" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <ToggleGroupItem value="semanal" aria-label="Ver por semana" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
               <CalendarDays className="h-4 w-4" />
               <span className="hidden sm:inline">Semanal</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="mensal" aria-label="Ver por mês" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <ToggleGroupItem value="mensal" aria-label="Ver por mês" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
               <CalendarIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Mensal</span>
             </ToggleGroupItem>
@@ -227,11 +347,21 @@ export function Dashboard({ dados }: DashboardProps) {
           <ResponsiveContainer width="100%" height={400}>
             <PieChart>
               <Pie
-                data={[
-                  { name: 'Ganhos', value: dados.totalGanhos, color: '#22c55e' },
-                  { name: 'Gastos', value: dados.totalGastos, color: '#ef4444' },
-                  { name: 'Lucro', value: dados.lucroTotal, color: '#3b82f6' }
-                ]}
+                data={(() => {
+                  const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+                  if (!periodo) {
+                    return [
+                      { name: 'Ganhos', value: 0, color: '#22c55e' },
+                      { name: 'Gastos', value: 0, color: '#ef4444' },
+                      { name: 'Lucro', value: 0, color: '#3b82f6' }
+                    ];
+                  }
+                  return [
+                    { name: 'Ganhos', value: periodo.ganhos, color: '#22c55e' },
+                    { name: 'Gastos', value: periodo.gastos, color: '#ef4444' },
+                    { name: 'Lucro', value: periodo.lucro, color: '#3b82f6' }
+                  ];
+                })()}
                 cx="50%"
                 cy="50%"
                 innerRadius={70}
@@ -241,28 +371,30 @@ export function Dashboard({ dados }: DashboardProps) {
                 stroke="none"
               >
                 {[
-                  { name: 'Ganhos', value: dados.totalGanhos, color: '#22c55e' },
-                  { name: 'Gastos', value: dados.totalGastos, color: '#ef4444' },
-                  { name: 'Lucro', value: dados.lucroTotal, color: '#3b82f6' }
+                  { name: 'Ganhos', color: '#22c55e' },
+                  { name: 'Gastos', color: '#ef4444' },
+                  { name: 'Lucro', color: '#3b82f6' }
                 ].map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                 ))}
               </Pie>
               <Tooltip
+                wrapperStyle={{ zIndex: 1000 }}
                 contentStyle={{
-                  backgroundColor: 'hsl(var(--popover))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '12px',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                  color: 'hsl(var(--popover-foreground))',
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+                  color: '#ffffff',
                   fontSize: '14px',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  padding: '8px 12px'
                 }}
                 formatter={(value: number, name: string) => [
-                  `R$ ${value.toFixed(2)}`, 
-                  <span style={{ color: 'hsl(var(--popover-foreground))' }}>{name}</span>
+                  <span style={{ color: '#ffffff' }}>{`R$ ${value.toFixed(2)}`}</span>,
+                  <span style={{ color: '#ffffff' }}>{name}</span>
                 ]}
-                labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                labelStyle={{ color: '#ffffff' }}
               />
               <Legend
                 verticalAlign="bottom"
@@ -293,7 +425,20 @@ export function Dashboard({ dados }: DashboardProps) {
             <LineChart data={dados.comparativoCombustivel}>
               <XAxis dataKey="data" />
               <YAxis />
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  padding: '8px 12px'
+                }}
+                formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Preço']}
+                labelStyle={{ color: '#ffffff' }}
+              />
               <Line type="monotone" dataKey="precoGasolina" stroke="#ef4444" name="Preço (R$)" />
             </LineChart>
           </ResponsiveContainer>
