@@ -184,35 +184,37 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center p-4 bg-background">
-      <Tabs defaultValue="uber" className="w-full max-w-4xl mx-auto">
-        <TabsList className="flex gap-2 w-full rounded-lg p-1 bg-transparent border border-border/30 shadow-sm mb-6">
-          <TabsTrigger value="uber" className="flex-1 flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2">
-            <Calculator className="h-4 w-4" />
-            Calculadora
+    <div className="flex flex-col items-center p-2 sm:p-4 bg-background">
+      <Tabs defaultValue="uber" className="w-full max-w-6xl mx-auto">
+        <TabsList className="flex gap-1 sm:gap-2 w-full rounded-lg p-1 bg-transparent border border-border/30 shadow-sm mb-4 sm:mb-6">
+          <TabsTrigger value="uber" className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 px-2 sm:px-4 text-xs sm:text-sm">
+            <Calculator className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline sm:inline">Calculadora</span>
+            <span className="xs:hidden sm:hidden">Calc</span>
           </TabsTrigger>
-          <TabsTrigger value="fuel" className="flex-1 flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2">
-            <Fuel className="h-4 w-4" />
-            Combustível
+          <TabsTrigger value="fuel" className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 px-2 sm:px-4 text-xs sm:text-sm">
+            <Fuel className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline sm:inline">Combustível</span>
+            <span className="xs:hidden sm:hidden">Comb</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="uber">
-          <Card className="border shadow-lg bg-card p-6 sm:p-8 rounded-xl">
-            <CardHeader className="pb-6">
-              <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Calculator className="h-6 w-6 text-primary" />
+          <Card className="border shadow-lg bg-card p-3 sm:p-6 lg:p-8 rounded-xl">
+            <CardHeader className="pb-4 sm:pb-6">
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                  <Calculator className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                Calculadora Uber
+                <span className="leading-tight">Calculadora Uber</span>
               </CardTitle>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
                 Calcule gastos, receita e lucro das suas viagens de forma rápida e precisa
               </p>
             </CardHeader>
-            <CardContent className="space-y-8 p-6 sm:p-8 pt-0">
-              <form autoComplete="off" className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+            <CardContent className="space-y-6 sm:space-y-8 p-3 sm:p-6 lg:p-8 pt-0">
+              <form autoComplete="off" className="space-y-6 sm:space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
                   {/* Seção 1: Informações Básicas */}
                   <div className="space-y-6 mb-8">
                     <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
@@ -352,10 +354,10 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                 </div>
                 
                 {/* Botões de Ação */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-border/50">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 sm:pt-8 border-t border-border/50">
                   <Button
                     className={cn(
-                      "flex-1 h-14 text-base font-semibold rounded-xl transition-all duration-300",
+                      "flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300",
                       "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
                       "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
                       "transform hover:scale-[1.02] active:scale-[0.98]",
@@ -364,58 +366,68 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                     onClick={calculateUberResults}
                     disabled={isFormDisabled}
                   >
-                    <Calculator className="h-5 w-5 mr-3" />
-                    {isFormDisabled ? 'Dados Calculados ✓' : 'Calcular Ganhos'}
+                    <Calculator className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
+                    <span className="hidden sm:inline">
+                      {isFormDisabled ? 'Dados Calculados ✓' : 'Calcular Ganhos'}
+                    </span>
+                    <span className="sm:hidden">
+                      {isFormDisabled ? 'Calculado ✓' : 'Calcular'}
+                    </span>
                   </Button>
                   <Button
                     variant="outline"
                     className={cn(
-                      "sm:w-48 h-14 text-base font-medium rounded-xl border-2 transition-all duration-300",
+                      "sm:w-48 h-12 sm:h-14 text-sm sm:text-base font-medium rounded-xl border-2 transition-all duration-300",
                       "hover:bg-muted/50 hover:border-primary/50 hover:scale-[1.02] active:scale-[0.98]"
                     )}
                     onClick={clearUberFields}
                   >
-                    <RefreshCw className={cn("h-5 w-5 mr-3", isFormDisabled && "animate-spin")} />
-                    {isFormDisabled ? 'Novo Cálculo' : 'Limpar Campos'}
+                    <RefreshCw className={cn("h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3", isFormDisabled && "animate-spin")} />
+                    <span className="hidden sm:inline">
+                      {isFormDisabled ? 'Novo Cálculo' : 'Limpar Campos'}
+                    </span>
+                    <span className="sm:hidden">
+                      {isFormDisabled ? 'Novo' : 'Limpar'}
+                    </span>
                   </Button>
                 </div>
               </form>
             </CardContent>
           </Card>
         {uberResults && (
-          <CardContent className="space-y-6 p-6 sm:p-8 pt-8 border-t border-border/50 animate-in fade-in-0 duration-500 slide-in-from-bottom-4 rounded-xl">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <BarChart3 className="h-7 w-7 text-primary" />
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 lg:p-8 pt-4 sm:pt-6 lg:pt-8 border-t border-border/50 animate-in fade-in-0 duration-500 slide-in-from-bottom-4 rounded-xl">
+            <h3 className="font-semibold text-base sm:text-lg flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
               Resumo da Viagem
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-              <div className="bg-zinc-900 border-2 border-red-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
-                <div className="flex items-center gap-2 mb-2 w-full justify-center">
-                  <TrendingDown className="h-8 w-8 text-red-400" />
-                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Custo Combustível</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:mt-6">
+              <div className="bg-zinc-900 border-2 border-red-400/40 shadow-2xl rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 w-full justify-center">
+                  <TrendingDown className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Custo Combustível</span>
                 </div>
-                <span className="text-3xl font-bold text-red-600 whitespace-nowrap w-full text-center">R$ {uberResults.fuelCost.toFixed(2)}</span>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 whitespace-nowrap w-full text-center">R$ {uberResults.fuelCost.toFixed(2)}</span>
               </div>
-              <div className="bg-zinc-900 border-2 border-primary/30 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
-                <div className="flex items-center gap-2 mb-2 w-full justify-center">
-                  <DollarSign className="h-8 w-8 text-primary" />
-                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Renda Total</span>
+              <div className="bg-zinc-900 border-2 border-primary/30 shadow-2xl rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 w-full justify-center">
+                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Renda Total</span>
                 </div>
-                <span className="text-3xl font-bold text-primary whitespace-nowrap w-full text-center">R$ {uberResults.totalIncome.toFixed(2)}</span>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary whitespace-nowrap w-full text-center">R$ {uberResults.totalIncome.toFixed(2)}</span>
               </div>
-              <div className="bg-zinc-900 border-2 border-blue-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
-                <div className="flex items-center gap-2 mb-2 w-full justify-center">
-                  <TrendingUp className="h-8 w-8 text-blue-600" />
-                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Lucro Líquido</span>
+              <div className="bg-zinc-900 border-2 border-blue-400/40 shadow-2xl rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 w-full justify-center">
+                  <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Lucro Líquido</span>
                 </div>
-                <span className="text-3xl font-bold text-blue-600 whitespace-nowrap w-full text-center">R$ {uberResults.netProfit.toFixed(2)}</span>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 whitespace-nowrap w-full text-center">R$ {uberResults.netProfit.toFixed(2)}</span>
               </div>
-              <div className="bg-zinc-900 border-2 border-purple-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
-                <div className="flex items-center gap-2 mb-2 w-full justify-center">
-                  <Route className="h-8 w-8 text-purple-600" />
-                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Lucro por Km</span>
+              <div className="bg-zinc-900 border-2 border-purple-400/40 shadow-2xl rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 w-full justify-center">
+                  <Route className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Lucro por Km</span>
                 </div>
-                <span className="text-3xl font-bold text-purple-600 whitespace-nowrap w-full text-center">R$ {uberResults.profitPerKm.toFixed(2)}</span>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-600 whitespace-nowrap w-full text-center">R$ {uberResults.profitPerKm.toFixed(2)}</span>
               </div>
             </div>
           </CardContent>
@@ -423,22 +435,22 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
         </TabsContent>
 
         <TabsContent value="fuel">
-          <Card className="border shadow-lg bg-card p-6 sm:p-8 rounded-xl">
-            <CardHeader className="pb-6">
-              <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Fuel className="h-6 w-6 text-primary" />
+          <Card className="border shadow-lg bg-card p-3 sm:p-6 lg:p-8 rounded-xl">
+            <CardHeader className="pb-4 sm:pb-6">
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                  <Fuel className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                Comparação de Combustíveis
+                <span className="leading-tight">Comparação de Combustíveis</span>
               </CardTitle>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
                 Compare custos entre etanol e gasolina para diferentes distâncias
               </p>
             </CardHeader>
             
-            <CardContent className="space-y-8 p-6 sm:p-8 pt-0">
-              <div className="grid gap-6">
-                <div className="grid lg:grid-cols-2 gap-10">
+            <CardContent className="space-y-6 sm:space-y-8 p-3 sm:p-6 lg:p-8 pt-0">
+              <div className="grid gap-4 sm:gap-6">
+                <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
                   <div className="space-y-6 mb-8">
                     <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
                       <div className="p-1.5 rounded-md bg-primary/10">
@@ -540,31 +552,32 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-border/50">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 sm:pt-8 border-t border-border/50">
                 <Button
-                  className="flex-1 h-14 text-base font-semibold rounded-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transform hover:scale-[1.02] active:scale-[0.98]"
+                  className="flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transform hover:scale-[1.02] active:scale-[0.98]"
                   onClick={calculateFuelComparison}
                 >
-                  <Fuel className="h-5 w-5 mr-3" />
-                  Comparar Combustíveis
+                  <Fuel className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
+                  <span className="hidden sm:inline">Comparar Combustíveis</span>
+                  <span className="sm:hidden">Comparar</span>
                 </Button>
                 <Button
                   variant="outline"
-                  className="sm:w-48 h-14 text-base font-medium rounded-xl border-2 transition-all duration-300 hover:bg-muted/50 hover:border-primary/50 hover:scale-[1.02] active:scale-[0.98]"
+                  className="sm:w-48 h-12 sm:h-14 text-sm sm:text-base font-medium rounded-xl border-2 transition-all duration-300 hover:bg-muted/50 hover:border-primary/50 hover:scale-[1.02] active:scale-[0.98]"
                   onClick={clearFuelFields}
                 >
-                  <RefreshCw className="h-5 w-5 mr-3" />
+                  <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
                   Limpar
                 </Button>
               </div>
 
               {fuelComparisons.length > 0 && (
-                <div className="space-y-6 border-t border-border/30 p-6 sm:p-8 pt-6 rounded-xl">
-                  <h3 className="font-semibold text-xl flex items-center gap-3">
+                <div className="space-y-4 sm:space-y-6 border-t border-border/30 p-4 sm:p-6 lg:p-8 pt-4 sm:pt-6 rounded-xl">
+                  <h3 className="font-semibold text-lg sm:text-xl flex items-center gap-2 sm:gap-3">
                     <BarChart3 className="h-5 w-5 text-primary" />
                     Comparação de Custos
                   </h3>
-                  <div className="grid gap-4 mt-6">
+                  <div className="grid gap-3 sm:gap-4 mt-4 sm:mt-6">
                     {fuelComparisons.map((comparison, index) => (
                       <Card key={index} className="p-4 bg-accent/10 border border-border/50 shadow-sm rounded-lg">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -586,7 +599,7 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                             Melhor: {comparison.bestOption}
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                           <div className="bg-red-500/5 p-4 rounded-lg border border-red-500/10">
                             <p className="text-sm font-medium text-red-600">Custo com Etanol</p>
                             <p className="text-lg font-semibold text-red-600 mt-1">

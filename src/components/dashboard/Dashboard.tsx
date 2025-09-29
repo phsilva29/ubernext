@@ -257,22 +257,22 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Cards de resumo responsivos */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-4 sm:grid-cols-2 grid-cols-1">
         {/* Cards de Resumo dinâmicos */}
         {/* Wrapper animado para cada card de resumo */}
         <div key={periodoSelecionado ? periodoSelecionado.mes + '-ganhos' : 'ganhos'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
           <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-green-400/40">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Ganhos</CardTitle>
-              <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Ganhos</CardTitle>
+              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+              <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-green-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
                 R$ {(periodoSelecionado ? periodoSelecionado.ganhos : 0).toFixed(2)}
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
@@ -287,13 +287,13 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
         <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-red-400/40">
           <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/5"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Gastos</CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-              <Fuel className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Gastos</CardTitle>
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+              <Fuel className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+            <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-red-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
               R$ {(periodoSelecionado ? periodoSelecionado.gastos : 0).toFixed(2)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
@@ -306,13 +306,13 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
         <div key={periodoSelecionado ? periodoSelecionado.mes + '-lucro' : 'lucro'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
         <Card className="transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-blue-400/40">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-muted/20 flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-muted/20 flex items-center justify-center">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-foreground" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+            <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
               R$ {(periodoSelecionado ? periodoSelecionado.lucro : 0).toFixed(2)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
@@ -326,13 +326,13 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
         <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-purple-400/40">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-600/5"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Lucro por KM</CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <Route className="h-4 w-4 text-purple-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Lucro por KM</CardTitle>
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+              <Route className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+            <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-purple-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
               R$ {(periodoSelecionado && periodoSelecionado.kmRodados > 0 ? (periodoSelecionado.lucro / periodoSelecionado.kmRodados) : 0).toFixed(2)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
@@ -346,11 +346,11 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
 
       {/* Gráficos */}
       <Card className="w-full transition-all duration-500 animate-in fade-in-0 slide-in-from-bottom-4">
-        <CardHeader className="flex flex-col space-y-4 pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="space-y-2">
-              <CardTitle className="text-xl sm:text-2xl font-bold">Análise de Resultados</CardTitle>
-              <p className="text-sm sm:text-base text-muted-foreground">
+        <CardHeader className="flex flex-col space-y-3 sm:space-y-4 pb-4 sm:pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="space-y-1 sm:space-y-2">
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold">Análise de Resultados</CardTitle>
+              <p className="text-xs sm:text-sm lg:text-base text-muted-foreground">
                 Visualize seus ganhos, gastos e lucros por período
               </p>
             </div>
@@ -360,23 +360,26 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
               onValueChange={(value: PeriodoVisualizacao) => setPeriodoVisualizacao(value)} 
               className="flex justify-start sm:justify-center transition-all duration-300 ease-in-out"
             >
-              <ToggleGroupItem value="diario" aria-label="Ver por dia" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
-                <Clock className="h-4 w-4" />
+              <ToggleGroupItem value="diario" aria-label="Ver por dia" className="gap-1 sm:gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105 text-xs sm:text-sm">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Diário</span>
+                <span className="sm:hidden">D</span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="semanal" aria-label="Ver por semana" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
-                <CalendarDays className="h-4 w-4" />
+              <ToggleGroupItem value="semanal" aria-label="Ver por semana" className="gap-1 sm:gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105 text-xs sm:text-sm">
+                <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Semanal</span>
+                <span className="sm:hidden">S</span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="mensal" aria-label="Ver por mês" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105">
-                <CalendarIcon className="h-4 w-4" />
+              <ToggleGroupItem value="mensal" aria-label="Ver por mês" className="gap-1 sm:gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all duration-200 ease-in-out hover:scale-105 text-xs sm:text-sm">
+                <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Mensal</span>
+                <span className="sm:hidden">M</span>
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={(() => {
@@ -396,8 +399,8 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
                 })()}
                 cx="50%"
                 cy="50%"
-                innerRadius={70}
-                outerRadius={140}
+                innerRadius={50}
+                outerRadius={100}
                 paddingAngle={3}
                 dataKey="value"
                 stroke="none"
@@ -446,14 +449,14 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
 
       <Card className="col-span-full transition-all duration-500 animate-in fade-in-0 slide-in-from-bottom-4">
         <CardHeader>
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-red-600" />
+          <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+            <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
             Histórico do Preço da Gasolina
           </CardTitle>
-          <p className="text-muted-foreground">Acompanhe a variação dos preços ao longo do tempo</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Acompanhe a variação dos preços ao longo do tempo</p>
         </CardHeader>
         <CardContent className="pl-2">
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={dadosDashboard?.comparativoCombustivel || []}>
               <XAxis dataKey="data" />
               <YAxis />
@@ -490,56 +493,59 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
           {/* Cards para todas as telas */}
           <div className="space-y-4">
             {dadosDashboard?.viagens?.map((viagem) => (
-              <Card key={viagem.id} className="p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border-2 border-border/50">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <CalendarIcon className="h-5 w-5 text-primary" />
+              <Card key={viagem.id} className="p-3 sm:p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] sm:hover:scale-[1.02] border-2 border-border/50">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0 mb-3 sm:mb-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                      <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold text-base">
+                      <p className="font-semibold text-sm sm:text-base">
                         {format(new Date(viagem.data), 'dd/MM/yyyy')}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {viagem.kmRodados} km • {viagem.consumo} km/L
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 sm:gap-2 self-end sm:self-start">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditar(viagem)}
-                      className="hover:bg-primary/10"
+                      className="hover:bg-primary/10 h-8 w-8 sm:h-9 sm:w-auto px-2 sm:px-3"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline ml-1">Editar</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleExcluir(viagem.id!)}
-                      className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      className="text-destructive hover:bg-destructive hover:text-destructive-foreground h-8 w-8 sm:h-9 sm:w-auto px-2 sm:px-3"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline ml-1">Excluir</span>
                     </Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-green-500/5 p-3 rounded-lg border border-green-500/20">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                  <div className="bg-green-500/5 p-2 sm:p-3 rounded-lg border border-green-500/20">
                     <span className="text-xs text-green-600 font-medium">Ganhos</span>
-                    <p className="text-lg font-bold text-green-600">R$ {viagem.valorGanho.toFixed(2)}</p>
+                    <p className="text-sm sm:text-base md:text-lg font-bold text-green-600 truncate">R$ {viagem.valorGanho.toFixed(2)}</p>
                   </div>
-                  <div className="bg-red-500/5 p-3 rounded-lg border border-red-500/20">
+                  <div className="bg-red-500/5 p-2 sm:p-3 rounded-lg border border-red-500/20">
                     <span className="text-xs text-red-600 font-medium">Gastos</span>
-                    <p className="text-lg font-bold text-red-600">R$ {viagem.gastosCombustivel?.toFixed(2)}</p>
+                    <p className="text-sm sm:text-base md:text-lg font-bold text-red-600 truncate">R$ {viagem.gastosCombustivel?.toFixed(2)}</p>
                   </div>
-                  <div className="bg-blue-500/5 p-3 rounded-lg border border-blue-500/20">
+                  <div className="bg-blue-500/5 p-2 sm:p-3 rounded-lg border border-blue-500/20">
                     <span className="text-xs text-blue-600 font-medium">Lucro</span>
-                    <p className="text-lg font-bold text-blue-600">R$ {viagem.lucroLiquido?.toFixed(2)}</p>
+                    <p className="text-sm sm:text-base md:text-lg font-bold text-blue-600 truncate">R$ {viagem.lucroLiquido?.toFixed(2)}</p>
                   </div>
-                  <div className="bg-purple-500/5 p-3 rounded-lg border border-purple-500/20">
-                    <span className="text-xs text-purple-600 font-medium">Valor do Combustível</span>
-                    <p className="text-lg font-bold text-purple-600">R$ {viagem.precoGasolina.toFixed(2)}</p>
+                  <div className="bg-purple-500/5 p-2 sm:p-3 rounded-lg border border-purple-500/20">
+                    <span className="text-xs text-purple-600 font-medium hidden sm:inline">Valor do Combustível</span>
+                    <span className="text-xs text-purple-600 font-medium sm:hidden">Combustível</span>
+                    <p className="text-sm sm:text-base md:text-lg font-bold text-purple-600 truncate">R$ {viagem.precoGasolina.toFixed(2)}</p>
                   </div>
                 </div>
               </Card>
