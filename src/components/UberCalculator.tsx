@@ -607,7 +607,7 @@ const UberCalculator = () => {
                             "px-3 py-1 rounded-full text-xs font-medium",
                             comparison.bestOption === "Etanol" 
                               ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
-                              : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
+                              : "bg-muted/20 text-foreground border border-border"
                           )}>
                             Melhor: {comparison.bestOption}
                           </div>

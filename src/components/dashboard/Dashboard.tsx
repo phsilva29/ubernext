@@ -303,15 +303,14 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-blue-600" />
+            <div className="h-8 w-8 rounded-lg bg-muted/20 flex items-center justify-center">
+              <DollarSign className="h-4 w-4 text-foreground" />
             </div>
           </CardHeader>
-          <CardContent className="relative">
+          <CardContent>
             {(() => {
               const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
               if (!periodo) {
