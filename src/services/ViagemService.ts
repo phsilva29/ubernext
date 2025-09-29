@@ -1,62 +1,36 @@
 import { Viagem, DadosDashboard } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 class ViagemService {
-  private static readonly STORAGE_KEY = '@UberNext:viagens';
-
-  // Excluir uma viagem
-  static async excluirViagem(id: string): Promise<void> {
-    try {
-      const viagens = await this.obterViagens();
-      const index = viagens.findIndex(v => v.id === id);
-      if (index !== -1) {
-        viagens.splice(index, 1);
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(viagens));
-      }
-    } catch (error) {
-      console.error('Erro ao excluir viagem:', error);
-      throw error;
-    }
-  }
-
-  // Editar uma viagem
-  static async editarViagem(id: string, viagemAtualizada: Viagem): Promise<Viagem> {
-    try {
-      const viagens = await this.obterViagens();
-      const index = viagens.findIndex(v => v.id === id);
-      if (index !== -1) {
-        const viagemEditada = {
-          ...viagemAtualizada,
-          id,
-          gastosCombustivel: (viagemAtualizada.kmRodados / viagemAtualizada.consumo) * viagemAtualizada.precoGasolina,
-          lucroLiquido: viagemAtualizada.valorGanho - ((viagemAtualizada.kmRodados / viagemAtualizada.consumo) * viagemAtualizada.precoGasolina),
-          lucroKm: (viagemAtualizada.valorGanho - ((viagemAtualizada.kmRodados / viagemAtualizada.consumo) * viagemAtualizada.precoGasolina)) / viagemAtualizada.kmRodados
-        };
-        viagens[index] = viagemEditada;
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(viagens));
-        return viagemEditada;
-      }
-      throw new Error('Viagem não encontrada');
-    } catch (error) {
-      console.error('Erro ao editar viagem:', error);
-      throw error;
-    }
-  }
-
   // Salvar uma nova viagem
   static async salvarViagem(viagem: Viagem): Promise<Viagem> {
     try {
-      const viagens = await this.obterViagens();
-      const novaViagem = {
-        ...viagem,
-        id: crypto.randomUUID(),
-        gastosCombustivel: (viagem.kmRodados / viagem.consumo) * viagem.precoGasolina,
-        lucroLiquido: viagem.valorGanho - ((viagem.kmRodados / viagem.consumo) * viagem.precoGasolina),
-        lucroKm: (viagem.valorGanho - ((viagem.kmRodados / viagem.consumo) * viagem.precoGasolina)) / viagem.kmRodados
-      };
-      
-      viagens.push(novaViagem);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(viagens));
-      return novaViagem;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const gastosCombustivel = (viagem.kmRodados / viagem.consumo) * viagem.precoGasolina;
+      const lucroLiquido = viagem.valorGanho - gastosCombustivel;
+      const lucroKm = lucroLiquido / viagem.kmRodados;
+
+      const { data, error } = await supabase
+        .from('viagens')
+        .insert({
+          user_id: user.id,
+          data: viagem.data.toISOString().split('T')[0],
+          km_rodados: viagem.kmRodados,
+          preco_gasolina: viagem.precoGasolina,
+          consumo: viagem.consumo,
+          valor_ganho: viagem.valorGanho,
+          gastos_combustivel: gastosCombustivel,
+          lucro_liquido: lucroLiquido,
+          lucro_km: lucroKm
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return this.mapViagemFromDB(data);
     } catch (error) {
       console.error('Erro ao salvar viagem:', error);
       throw error;
@@ -66,17 +40,76 @@ class ViagemService {
   // Obter todas as viagens
   static async obterViagens(): Promise<Viagem[]> {
     try {
-      const dados = localStorage.getItem(this.STORAGE_KEY);
-      if (!dados) return [];
-      
-      const viagens = JSON.parse(dados);
-      return viagens.map((v: any) => ({
-        ...v,
-        data: new Date(v.data)
-      }));
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('viagens')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('data', { ascending: false });
+
+      if (error) throw error;
+
+      return data.map(this.mapViagemFromDB);
     } catch (error) {
       console.error('Erro ao obter viagens:', error);
       return [];
+    }
+  }
+
+  // Editar uma viagem
+  static async editarViagem(id: string, viagemAtualizada: Viagem): Promise<Viagem> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const gastosCombustivel = (viagemAtualizada.kmRodados / viagemAtualizada.consumo) * viagemAtualizada.precoGasolina;
+      const lucroLiquido = viagemAtualizada.valorGanho - gastosCombustivel;
+      const lucroKm = lucroLiquido / viagemAtualizada.kmRodados;
+
+      const { data, error } = await supabase
+        .from('viagens')
+        .update({
+          data: viagemAtualizada.data.toISOString().split('T')[0],
+          km_rodados: viagemAtualizada.kmRodados,
+          preco_gasolina: viagemAtualizada.precoGasolina,
+          consumo: viagemAtualizada.consumo,
+          valor_ganho: viagemAtualizada.valorGanho,
+          gastos_combustivel: gastosCombustivel,
+          lucro_liquido: lucroLiquido,
+          lucro_km: lucroKm
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return this.mapViagemFromDB(data);
+    } catch (error) {
+      console.error('Erro ao editar viagem:', error);
+      throw error;
+    }
+  }
+
+  // Excluir uma viagem
+  static async excluirViagem(id: string): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { error } = await supabase
+        .from('viagens')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Erro ao excluir viagem:', error);
+      throw error;
     }
   }
 
@@ -103,6 +136,21 @@ class ViagemService {
       console.error('Erro ao obter dados do dashboard:', error);
       throw error;
     }
+  }
+
+  // Mapear dados do banco para interface Viagem
+  private static mapViagemFromDB(dbViagem: any): Viagem {
+    return {
+      id: dbViagem.id,
+      data: new Date(dbViagem.data),
+      kmRodados: parseFloat(dbViagem.km_rodados),
+      precoGasolina: parseFloat(dbViagem.preco_gasolina),
+      consumo: parseFloat(dbViagem.consumo),
+      valorGanho: parseFloat(dbViagem.valor_ganho),
+      gastosCombustivel: dbViagem.gastos_combustivel ? parseFloat(dbViagem.gastos_combustivel) : undefined,
+      lucroLiquido: dbViagem.lucro_liquido ? parseFloat(dbViagem.lucro_liquido) : undefined,
+      lucroKm: dbViagem.lucro_km ? parseFloat(dbViagem.lucro_km) : undefined
+    };
   }
 
   // Calcular histórico mensal

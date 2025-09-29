@@ -17,7 +17,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 interface DashboardProps {
-  dados: DadosDashboard;
+  dados?: DadosDashboard;
 }
 
 interface DadosGrafico {
@@ -30,7 +30,41 @@ interface DadosGrafico {
 
 type PeriodoVisualizacao = 'diario' | 'semanal' | 'mensal';
 
-export function Dashboard({ dados }: DashboardProps) {
+export function Dashboard({ dados: dadosProps }: DashboardProps) {
+  const [dados, setDados] = useState<DadosDashboard | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        setIsLoading(true);
+        const dadosDashboard = await ViagemService.obterDadosDashboard();
+        setDados(dadosDashboard);
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    carregarDados();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!dados) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Erro ao carregar dados do dashboard</p>
+      </div>
+    );
+  }
   const [viagemParaEditar, setViagemParaEditar] = useState<Viagem | undefined>(undefined);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [periodoVisualizacao, setPeriodoVisualizacao] = useState<PeriodoVisualizacao>('mensal');
