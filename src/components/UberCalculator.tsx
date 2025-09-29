@@ -30,6 +30,7 @@ interface FuelComparison {
 }
 
 const UberCalculator = () => {
+  const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [uberData, setUberData] = useState({
     data: undefined as Date | undefined,
     kmDriven: '',
@@ -109,6 +110,7 @@ const UberCalculator = () => {
       profitPerKm
     };
     setUberResults(results);
+    setIsFormDisabled(true);
 
     try {
       // Salvar a viagem
@@ -179,6 +181,7 @@ const UberCalculator = () => {
       dailyIncome: ''
     });
     setUberResults(null);
+    setIsFormDisabled(false);
   };
 
   const clearFuelFields = () => {
@@ -230,9 +233,11 @@ const UberCalculator = () => {
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
+                        disabled={isFormDisabled}
                         className={cn(
                           "w-full justify-start text-left font-normal",
-                          !uberData.data && "text-muted-foreground"
+                          !uberData.data && "text-muted-foreground",
+                          isFormDisabled && "opacity-50 cursor-not-allowed"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -258,6 +263,7 @@ const UberCalculator = () => {
                     type="text"
                     placeholder="Ex: 120"
                     value={uberData.kmDriven}
+                    disabled={isFormDisabled}
                     onChange={(e) => handleUberInputChange('kmDriven', e.target.value)}
                     className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground"
                   />
@@ -271,6 +277,7 @@ const UberCalculator = () => {
                       type="text"
                       placeholder="Ex: 5.89"
                       value={uberData.gasPrice}
+                      disabled={isFormDisabled}
                       onChange={(e) => handleUberInputChange('gasPrice', e.target.value)}
                       className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground"
                     />
@@ -283,6 +290,7 @@ const UberCalculator = () => {
                       type="text"
                       placeholder="Ex: 12"
                       value={uberData.fuelConsumption}
+                      disabled={isFormDisabled}
                       onChange={(e) => handleUberInputChange('fuelConsumption', e.target.value)}
                       className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground"
                     />
@@ -296,6 +304,7 @@ const UberCalculator = () => {
                     type="text"
                     placeholder="Ex: 150.00"
                     value={uberData.dailyIncome}
+                    disabled={isFormDisabled}
                     onChange={(e) => handleUberInputChange('dailyIncome', e.target.value)}
                     className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground"
                   />
@@ -303,18 +312,25 @@ const UberCalculator = () => {
 
                 <div className="flex gap-4 pt-4">
                   <Button
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                    className={cn(
+                      "flex-1 bg-primary text-primary-foreground hover:bg-primary/90",
+                      isFormDisabled && "opacity-50 cursor-not-allowed"
+                    )}
                     onClick={calculateUberResults}
+                    disabled={isFormDisabled}
                   >
-                    Adicionar Ganhos
+                    {isFormDisabled ? 'Dados Adicionados' : 'Adicionar Ganhos'}
                   </Button>
                   <Button
                     variant="outline"
-                    className="bg-transparent border-calculator-border text-card-foreground hover:bg-accent flex items-center gap-2"
+                    className={cn(
+                      "bg-transparent border-calculator-border text-card-foreground hover:bg-accent flex items-center gap-2",
+                      isFormDisabled && "bg-accent"
+                    )}
                     onClick={clearUberFields}
                   >
-                    <RefreshCw className="h-4 w-4" />
-                    Limpar
+                    <RefreshCw className={cn("h-4 w-4", isFormDisabled && "animate-spin")} />
+                    {isFormDisabled ? 'Novo Cálculo' : 'Limpar'}
                   </Button>
                 </div>
 
