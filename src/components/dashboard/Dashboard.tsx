@@ -3,7 +3,7 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Line, LineCh
 import { DadosDashboard, Viagem } from "@/types";
 import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2, DollarSign, TrendingUp, TrendingDown, Car, Fuel, Route } from "lucide-react";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
@@ -16,8 +16,34 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
-interface DashboardProps {
+// Hook para animar números
+function useAnimatedNumber(value: number, duration = 600) {
+  const [display, setDisplay] = useState(value);
+  const ref = useRef<number>(value);
+  useEffect(() => {
+    const start = ref.current;
+    const change = value - start;
+    if (change === 0) return;
+    const startTime = performance.now();
+    function animate(now: number) {
+      const elapsed = now - startTime;
+      if (elapsed < duration) {
+        setDisplay(start + (change * (elapsed / duration)));
+        requestAnimationFrame(animate);
+      } else {
+        setDisplay(value);
+        ref.current = value;
+      }
+    }
+    requestAnimationFrame(animate);
+    // eslint-disable-next-line
+  }, [value]);
+  return display;
+}
+
+export interface DashboardProps {
   dados?: DadosDashboard;
+  onDataUpdate?: () => void;
 }
 
 interface DadosGrafico {
@@ -30,7 +56,95 @@ interface DadosGrafico {
 
 type PeriodoVisualizacao = 'diario' | 'semanal' | 'mensal';
 
-export function Dashboard({ dados: dadosProps }: DashboardProps) {
+// Função para extrair a data do agrupamento
+function extrairData(dados: DadosGrafico, periodo: PeriodoVisualizacao): Date {
+  function toBrasiliaDate(date: Date) {
+    // Ajusta para UTC-3 (Brasília)
+    return new Date(date.getTime() - 3 * 60 * 60 * 1000);
+  }
+  if (periodo === 'diario') {
+    const partes = dados.mes.split('/');
+    const dia = partes[0];
+    const mes = partes[1];
+    let ano = new Date().getFullYear();
+    if (partes.length === 3) ano = parseInt(partes[2]);
+    return toBrasiliaDate(new Date(ano, parseInt(mes) - 1, parseInt(dia)));
+  } else if (periodo === 'semanal') {
+    const [inicio] = dados.mes.split(' - ');
+    const partes = inicio.split('/');
+    const dia = partes[0];
+    const mes = partes[1];
+    let ano = new Date().getFullYear();
+    if (partes.length === 3) ano = parseInt(partes[2]);
+    return toBrasiliaDate(new Date(ano, parseInt(mes) - 1, parseInt(dia)));
+  } else {
+    let mesStr = '';
+    let anoStr = '';
+    if (dados.mes.includes('/')) {
+      [mesStr, anoStr] = dados.mes.split('/');
+    } else if (dados.mes.includes(' ')) {
+      [mesStr, anoStr] = dados.mes.split(' ');
+    }
+    const meses = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    const mesNum = meses.findIndex(m => mesStr.toLowerCase().startsWith(m));
+    return toBrasiliaDate(new Date(parseInt(anoStr), mesNum, 1));
+  }
+}
+
+function getPeriodoSelecionado(arr: DadosGrafico[], periodo: PeriodoVisualizacao): DadosGrafico | null {
+  if (!arr.length) return null;
+  let hoje = new Date();
+  hoje = new Date(hoje.getTime() - 3 * 60 * 60 * 1000);
+  const anoAtual = hoje.getFullYear();
+  if (periodo === 'diario') {
+    const dia = hoje.getDate().toString().padStart(2, '0');
+    const mes = (hoje.getMonth() + 1).toString().padStart(2, '0');
+    const chave = `${dia}/${mes}`;
+    return arr.find(d => d.mes.startsWith(chave)) || null;
+  } else if (periodo === 'semanal') {
+    // Busca semana que contém hoje
+    return arr.find(d => {
+      try {
+        const [inicio, fim] = d.mes.split(' - ');
+        const partesIni = inicio.split('/');
+        const partesFim = fim.split('/');
+        
+        // Se não tiver ano, usa o ano atual
+        let anoIni = hoje.getFullYear();
+        let anoFim = hoje.getFullYear();
+        
+        const diaIni = parseInt(partesIni[0]);
+        const mesIni = parseInt(partesIni[1]);
+        if (partesIni.length === 3) anoIni = parseInt(partesIni[2]);
+        
+        const diaFim = parseInt(partesFim[0]);
+        const mesFim = parseInt(partesFim[1]);
+        if (partesFim.length === 3) anoFim = parseInt(partesFim[2]);
+        
+        const dataIni = new Date(anoIni, mesIni - 1, diaIni);
+        const dataFim = new Date(anoFim, mesFim - 1, diaFim);
+        
+        return hoje >= dataIni && hoje <= dataFim;
+      } catch (error) {
+        console.error('Erro ao processar data semanal:', error);
+        return false;
+      }
+    }) || null;
+  } else {
+    // Mensal
+    const meses = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    const mesAtual = meses[hoje.getMonth()];
+    return arr.find(d => d.mes.toLowerCase().includes(mesAtual) && d.mes.includes(anoAtual.toString())) || null;
+  }
+}
+
+export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProps) {
   // FUNÇÃO HELPER DEVE VIR ANTES DOS HOOKS
   const agruparDadosPorPeriodo = (viagens: Viagem[], periodo: PeriodoVisualizacao): DadosGrafico[] => {
     const dadosAgrupados = new Map<string, DadosGrafico>();
@@ -78,7 +192,6 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
   };
 
   // TODOS OS HOOKS DEVEM VIR PRIMEIRO - ANTES DE QUALQUER EARLY RETURN
-  const [dados, setDados] = useState<DadosDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [viagemParaEditar, setViagemParaEditar] = useState<Viagem | undefined>(undefined);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -86,28 +199,16 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
   const [dadosFiltrados, setDadosFiltrados] = useState<DadosGrafico[]>([]);
 
   useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        setIsLoading(true);
-        const dadosDashboard = await ViagemService.obterDadosDashboard();
-        setDados(dadosDashboard);
-      } catch (error) {
-        console.error('Erro ao carregar dados do dashboard:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    carregarDados();
-  }, []);
+    setIsLoading(!dadosDashboard);
+  }, [dadosDashboard, periodoVisualizacao]);
 
   // Segundo useEffect que foi movido para cá
   useEffect(() => {
-    if (dados?.viagens) {
-      const dadosAgrupados = agruparDadosPorPeriodo(dados.viagens, periodoVisualizacao);
+    if (dadosDashboard?.viagens) {
+      const dadosAgrupados = agruparDadosPorPeriodo(dadosDashboard.viagens, periodoVisualizacao);
       setDadosFiltrados(dadosAgrupados);
     }
-  }, [dados?.viagens, periodoVisualizacao]);
+  }, [dadosDashboard?.viagens, periodoVisualizacao]);
 
   // AGORA PODEMOS TER EARLY RETURNS DEPOIS DE TODOS OS HOOKS
   if (isLoading) {
@@ -118,102 +219,8 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
     );
   }
 
-  if (!dados) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Erro ao carregar dados do dashboard</p>
-      </div>
-    );
-  }
-
-  // Função para extrair a data do agrupamento
-  function extrairData(dados: DadosGrafico, periodo: PeriodoVisualizacao): Date {
-    function toBrasiliaDate(date: Date) {
-      // Ajusta para UTC-3 (Brasília)
-      return new Date(date.getTime() - 3 * 60 * 60 * 1000);
-    }
-    if (periodo === 'diario') {
-      const partes = dados.mes.split('/');
-      const dia = partes[0];
-      const mes = partes[1];
-      let ano = new Date().getFullYear();
-      if (partes.length === 3) ano = parseInt(partes[2]);
-      return toBrasiliaDate(new Date(ano, parseInt(mes) - 1, parseInt(dia)));
-    } else if (periodo === 'semanal') {
-      const [inicio] = dados.mes.split(' - ');
-      const partes = inicio.split('/');
-      const dia = partes[0];
-      const mes = partes[1];
-      let ano = new Date().getFullYear();
-      if (partes.length === 3) ano = parseInt(partes[2]);
-      return toBrasiliaDate(new Date(ano, parseInt(mes) - 1, parseInt(dia)));
-    } else {
-      let mesStr = '';
-      let anoStr = '';
-      if (dados.mes.includes('/')) {
-        [mesStr, anoStr] = dados.mes.split('/');
-      } else if (dados.mes.includes(' ')) {
-        [mesStr, anoStr] = dados.mes.split(' ');
-      }
-      const meses = [
-        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-      ];
-      const mesNum = meses.findIndex(m => mesStr.toLowerCase().startsWith(m));
-      return toBrasiliaDate(new Date(parseInt(anoStr), mesNum, 1));
-    }
-  }
-
-  function getPeriodoSelecionado(arr: DadosGrafico[], periodo: PeriodoVisualizacao): DadosGrafico | null {
-    if (!arr.length) return null;
-    let hoje = new Date();
-    hoje = new Date(hoje.getTime() - 3 * 60 * 60 * 1000);
-    const anoAtual = hoje.getFullYear();
-    if (periodo === 'diario') {
-      const dia = hoje.getDate().toString().padStart(2, '0');
-      const mes = (hoje.getMonth() + 1).toString().padStart(2, '0');
-      const chave = `${dia}/${mes}`;
-      return arr.find(d => d.mes.startsWith(chave)) || null;
-    } else if (periodo === 'semanal') {
-      // Busca semana que contém hoje
-      return arr.find(d => {
-        try {
-          const [inicio, fim] = d.mes.split(' - ');
-          const partesIni = inicio.split('/');
-          const partesFim = fim.split('/');
-          
-          // Se não tiver ano, usa o ano atual
-          let anoIni = hoje.getFullYear();
-          let anoFim = hoje.getFullYear();
-          
-          const diaIni = parseInt(partesIni[0]);
-          const mesIni = parseInt(partesIni[1]);
-          if (partesIni.length === 3) anoIni = parseInt(partesIni[2]);
-          
-          const diaFim = parseInt(partesFim[0]);
-          const mesFim = parseInt(partesFim[1]);
-          if (partesFim.length === 3) anoFim = parseInt(partesFim[2]);
-          
-          const dataIni = new Date(anoIni, mesIni - 1, diaIni);
-          const dataFim = new Date(anoFim, mesFim - 1, diaFim);
-          
-          return hoje >= dataIni && hoje <= dataFim;
-        } catch (error) {
-          console.error('Erro ao processar data semanal:', error);
-          return false;
-        }
-      }) || null;
-    } else {
-      // Mensal
-      const meses = [
-        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-      ];
-      const mesAtual = meses[hoje.getMonth()];
-      return arr.find(d => d.mes.toLowerCase().includes(mesAtual) && d.mes.includes(anoAtual.toString())) || null;
-    }
-  }
-
+  // Nunca retorne antes dos cards de resumo. Se não houver dados, mostre zero animado.
+  const periodoSelecionado = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
 
 
   const handleEditar = (viagem: Viagem) => {
@@ -225,7 +232,9 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
     if (window.confirm('Tem certeza que deseja excluir esta viagem?')) {
       try {
         await ViagemService.excluirViagem(id);
-        window.location.reload();
+        if (onDataUpdate) {
+          onDataUpdate();
+        }
       } catch (error) {
         console.error('Erro ao excluir viagem:', error);
         alert('Erro ao excluir viagem');
@@ -237,7 +246,9 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
     try {
       if (viagemParaEditar?.id) {
         await ViagemService.editarViagem(viagemParaEditar.id, viagemAtualizada);
-        window.location.reload();
+        if (onDataUpdate) {
+          onDataUpdate();
+        }
       }
     } catch (error) {
       console.error('Erro ao editar viagem:', error);
@@ -248,36 +259,32 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
   return (
     <div className="space-y-6">
       {/* Cards de resumo responsivos */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 transition-all duration-300 ease-in-out">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Cards de Resumo dinâmicos */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Ganhos</CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            {(() => {
-              const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-              if (!periodo) {
-                return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
-              }
-              return <>
-                <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-1 transition-all duration-300 ease-in-out transform">
-                  R$ {periodo.ganhos.toFixed(2)}
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
-                  <Car className="h-3 w-3" />
-                  {periodo.kmRodados.toFixed(0)} km considerados
-                </p>
-              </>;
-            })()}
-          </CardContent>
-        </Card>
+        {/* Wrapper animado para cada card de resumo */}
+        <div key={periodoSelecionado ? periodoSelecionado.mes + '-ganhos' : 'ganhos'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
+          <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-green-400/40">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Ganhos</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </div>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+                R$ {(periodoSelecionado ? periodoSelecionado.ganhos : 0).toFixed(2)}
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+                <Car className="h-3 w-3" />
+                {periodoSelecionado ? periodoSelecionado.kmRodados.toFixed(0) : '0'} km considerados
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card className="relative overflow-hidden">
+        <div key={periodoSelecionado ? periodoSelecionado.mes + '-gastos' : 'gastos'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
+        <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-red-400/40">
           <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/5"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Gastos</CardTitle>
@@ -286,24 +293,18 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
             </div>
           </CardHeader>
           <CardContent className="relative">
-            {(() => {
-              const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-              if (!periodo) {
-                return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
-              }
-              return <>
-                <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-1">
-                  R$ {periodo.gastos.toFixed(2)}
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Combustível consumido
-                </p>
-              </>;
-            })()}
+            <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+              R$ {(periodoSelecionado ? periodoSelecionado.gastos : 0).toFixed(2)}
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Combustível consumido
+            </p>
           </CardContent>
         </Card>
+        </div>
 
-        <Card>
+        <div key={periodoSelecionado ? periodoSelecionado.mes + '-lucro' : 'lucro'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
+        <Card className="transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-blue-400/40">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
             <div className="h-8 w-8 rounded-lg bg-muted/20 flex items-center justify-center">
@@ -311,24 +312,18 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
             </div>
           </CardHeader>
           <CardContent>
-            {(() => {
-              const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-              if (!periodo) {
-                return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
-              }
-              return <>
-                <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1">
-                  R$ {periodo.lucro.toFixed(2)}
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Média: R$ {periodo.lucro.toFixed(2)} por viagem
-                </p>
-              </>;
-            })()}
+            <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+              R$ {(periodoSelecionado ? periodoSelecionado.lucro : 0).toFixed(2)}
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Média: R$ {(periodoSelecionado && periodoSelecionado.kmRodados > 0 ? (periodoSelecionado.lucro / periodoSelecionado.kmRodados) : 0).toFixed(2)} por viagem
+            </p>
           </CardContent>
         </Card>
+        </div>
 
-        <Card className="relative overflow-hidden">
+        <div key={periodoSelecionado ? periodoSelecionado.mes + '-lucrokm' : 'lucrokm'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
+        <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-purple-400/40">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-600/5"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="text-sm font-medium text-muted-foreground">Lucro por KM</CardTitle>
@@ -337,27 +332,20 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
             </div>
           </CardHeader>
           <CardContent className="relative">
-            {(() => {
-              const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-              if (!periodo) {
-                return <div className="text-center text-muted-foreground">Nenhum dado para o período selecionado</div>;
-              }
-              return <>
-                <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-1">
-                  R$ {periodo.kmRodados > 0 ? (periodo.lucro / periodo.kmRodados).toFixed(2) : '0.00'}
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
-                  <Route className="h-3 w-3" />
-                  {periodo.kmRodados.toFixed(0)} km percorridos
-                </p>
-              </>;
-            })()}
+            <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+              R$ {(periodoSelecionado && periodoSelecionado.kmRodados > 0 ? (periodoSelecionado.lucro / periodoSelecionado.kmRodados) : 0).toFixed(2)}
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+              <Route className="h-3 w-3" />
+              {periodoSelecionado ? periodoSelecionado.kmRodados.toFixed(0) : '0'} km percorridos
+            </p>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Gráficos */}
-      <Card className="w-full">
+      <Card className="w-full transition-all duration-500 animate-in fade-in-0 slide-in-from-bottom-4">
         <CardHeader className="flex flex-col space-y-4 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-2">
@@ -392,7 +380,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
             <PieChart>
               <Pie
                 data={(() => {
-                  const periodo = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+                  const periodo = getPeriodoSelecionado(dadosDashboard?.viagens ? agruparDadosPorPeriodo(dadosDashboard.viagens, periodoVisualizacao) : [], periodoVisualizacao);
                   if (!periodo) {
                     return [
                       { name: 'Ganhos', value: 0, color: '#22c55e' },
@@ -456,7 +444,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
         </CardContent>
       </Card>
 
-      <Card className="col-span-full">
+      <Card className="col-span-full transition-all duration-500 animate-in fade-in-0 slide-in-from-bottom-4">
         <CardHeader>
           <CardTitle className="text-xl font-bold flex items-center gap-2">
             <TrendingDown className="h-5 w-5 text-red-600" />
@@ -466,7 +454,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
         </CardHeader>
         <CardContent className="pl-2">
           <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={dados.comparativoCombustivel}>
+            <LineChart data={dadosDashboard?.comparativoCombustivel || []}>
               <XAxis dataKey="data" />
               <YAxis />
               <Tooltip
@@ -490,7 +478,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
       </Card>
 
       {/* Tabela de Viagens Responsiva */}
-      <Card className="w-full">
+      <Card className="w-full transition-all duration-500 animate-in fade-in-0 slide-in-from-bottom-4">
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
             <Car className="h-5 w-5 text-blue-600" />
@@ -515,7 +503,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dados.viagens?.map((viagem) => (
+                {dadosDashboard?.viagens?.map((viagem) => (
                   <TableRow key={viagem.id}>
                     <TableCell>{format(new Date(viagem.data), 'dd/MM/yyyy')}</TableCell>
                     <TableCell>{viagem.kmRodados} km</TableCell>
@@ -551,7 +539,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
 
           {/* Versão Mobile */}
           <div className="md:hidden space-y-4">
-            {dados.viagens?.map((viagem) => (
+            {dadosDashboard?.viagens?.map((viagem) => (
               <Card key={viagem.id} className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -611,6 +599,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
           setViagemParaEditar(undefined);
         }}
         onSave={handleSalvarEdicao}
+        onDataUpdate={onDataUpdate}
         viagem={viagemParaEditar}
       />
     </div>
@@ -622,9 +611,10 @@ interface ViagemDialogProps {
   onClose: () => void;
   onSave: (viagem: Viagem) => Promise<void>;
   viagem?: Viagem;
+  onDataUpdate?: () => void;
 }
 
-const EditarViagemDialog = ({ isOpen, onClose, onSave, viagem }: ViagemDialogProps) => {
+const EditarViagemDialog = ({ isOpen, onClose, onSave, viagem, onDataUpdate }: ViagemDialogProps) => {
   const [formData, setFormData] = useState<Partial<Viagem>>(
     viagem ? {
       ...viagem,
@@ -646,6 +636,9 @@ const EditarViagemDialog = ({ isOpen, onClose, onSave, viagem }: ViagemDialogPro
     }
     
     await onSave(formData as Viagem);
+    if (onDataUpdate) {
+      onDataUpdate();
+    }
     onClose();
   };
 

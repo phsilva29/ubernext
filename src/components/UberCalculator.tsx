@@ -8,11 +8,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, BarChart3, CalendarIcon, RefreshCw } from 'lucide-react';
+import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, BarChart3, CalendarIcon, RefreshCw, TrendingUp, Route } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ViagemService from '@/services/ViagemService';
-import { Dashboard } from './dashboard/Dashboard';
-import type { DadosDashboard } from '@/types';
 
 interface CalculationResult {
   fuelCost: number;
@@ -29,7 +27,11 @@ interface FuelComparison {
   bestOption: string;
 }
 
-const UberCalculator = () => {
+export interface UberCalculatorProps {
+  onDataUpdate?: () => void;
+}
+
+const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
   const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [uberData, setUberData] = useState({
     data: undefined as Date | undefined,
@@ -48,21 +50,13 @@ const UberCalculator = () => {
   });
 
   const [uberResults, setUberResults] = useState<CalculationResult | null>(null);
-  const [dashboardData, setDashboardData] = useState<DadosDashboard | null>(null);
   const [fuelComparisons, setFuelComparisons] = useState<FuelComparison[]>([]);
 
-  useEffect(() => {
-    carregarDadosDashboard();
-  }, []);
+  // Estado para controlar o popover do calendário
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
 
-  const carregarDadosDashboard = async () => {
-    try {
-      const dados = await ViagemService.obterDadosDashboard();
-      setDashboardData(dados);
-    } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
-    }
-  };
+  useEffect(() => {
+  }, []);
 
   const handleUberInputChange = (field: keyof typeof uberData, value: Date | string) => {
     if (field === 'data') {
@@ -114,7 +108,7 @@ const UberCalculator = () => {
 
     try {
       await ViagemService.salvarViagem({
-        data: uberData.data,
+        data: format(uberData.data, 'yyyy-MM-dd'),
         kmRodados: km,
         precoGasolina: gasPrice,
         consumo: consumption,
@@ -123,7 +117,10 @@ const UberCalculator = () => {
         lucroLiquido: netProfit,
         lucroKm: profitPerKm
       });
-      await carregarDadosDashboard();
+      // Chamar a função de atualização de dados do dashboard, se fornecida
+      if (onDataUpdate) {
+        onDataUpdate();
+      }
     } catch (error) {
       console.error('Erro ao salvar viagem:', error);
       alert('Erro ao salvar os dados da viagem');
@@ -187,8 +184,8 @@ const UberCalculator = () => {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen p-4 bg-background">
-      <Tabs defaultValue="uber" className="w-full max-w-2xl">
+    <div className="flex flex-col items-center p-4 bg-background">
+      <Tabs defaultValue="uber" className="w-full max-w-4xl mx-auto">
         <TabsList className="flex gap-2 w-full rounded-lg p-1 bg-transparent border border-border/30 shadow-sm mb-6">
           <TabsTrigger value="uber" className="flex-1 flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2">
             <Calculator className="h-4 w-4" />
@@ -201,7 +198,7 @@ const UberCalculator = () => {
         </TabsList>
 
         <TabsContent value="uber">
-          <Card className="border shadow-lg bg-gradient-to-br from-card/80 to-card backdrop-blur-sm">
+          <Card className="border shadow-lg bg-card p-6 sm:p-8 rounded-xl">
             <CardHeader className="pb-6">
               <CardTitle className="text-2xl font-bold flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-primary/10">
@@ -213,22 +210,22 @@ const UberCalculator = () => {
                 Calcule gastos, receita e lucro das suas viagens de forma rápida e precisa
               </p>
             </CardHeader>
-            <CardContent className="space-y-8">
+            <CardContent className="space-y-8 p-6 sm:p-8 pt-0">
               <form autoComplete="off" className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
                   {/* Seção 1: Informações Básicas */}
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                  <div className="space-y-6 mb-8">
+                    <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
                       <div className="p-1.5 rounded-md bg-primary/10">
                         <CalendarIcon className="h-4 w-4 text-primary" />
                       </div>
-                      <h4 className="font-semibold text-foreground">Informações Básicas</h4>
-                    </div>
+                      Informações Básicas
+                    </h4>
                     
                     <div className="space-y-4">
-                      <div className="space-y-3">
+                      <div className="space-y-3 flex flex-col">
                         <Label htmlFor="data" className="text-sm font-medium">Data da Viagem</Label>
-                        <Popover>
+                        <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -244,11 +241,14 @@ const UberCalculator = () => {
                               {uberData.data ? format(uberData.data, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-3" align="start">
                             <Calendar
                               mode="single"
                               selected={uberData.data}
-                              onSelect={date => handleUberInputChange('data', date as Date)}
+                              onSelect={date => {
+                                handleUberInputChange('data', date as Date);
+                                setIsDatePopoverOpen(false);
+                              }}
                               initialFocus
                               locale={ptBR}
                               className="rounded-lg border bg-card p-3 pointer-events-auto"
@@ -257,7 +257,7 @@ const UberCalculator = () => {
                         </Popover>
                       </div>
                       
-                      <div className="space-y-3">
+                      <div className="space-y-3 flex flex-col">
                         <Label htmlFor="kmDriven" className="text-sm font-medium">Quilômetros Rodados</Label>
                         <div className="relative">
                           <Input
@@ -276,16 +276,16 @@ const UberCalculator = () => {
                   </div>
 
                   {/* Seção 2: Combustível */}
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                  <div className="space-y-6 mb-8">
+                    <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
                       <div className="p-1.5 rounded-md bg-primary/10">
                         <Fuel className="h-4 w-4 text-primary" />
                       </div>
-                      <h4 className="font-semibold text-foreground">Combustível</h4>
-                    </div>
+                      Combustível
+                    </h4>
                     
                     <div className="space-y-4">
-                      <div className="space-y-3">
+                      <div className="space-y-3 flex flex-col">
                         <Label htmlFor="gasPrice" className="text-sm font-medium">Preço da Gasolina</Label>
                         <div className="relative">
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
@@ -301,7 +301,7 @@ const UberCalculator = () => {
                         </div>
                       </div>
                       
-                      <div className="space-y-3">
+                      <div className="space-y-3 flex flex-col">
                         <Label htmlFor="fuelConsumption" className="text-sm font-medium">Consumo Médio</Label>
                         <div className="relative">
                           <Input
@@ -320,16 +320,16 @@ const UberCalculator = () => {
                   </div>
 
                   {/* Seção 3: Ganhos */}
-                  <div className="space-y-6 md:col-span-2 xl:col-span-1">
-                    <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                  <div className="space-y-6 md:col-span-2 xl:col-span-1 mb-8">
+                    <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
                       <div className="p-1.5 rounded-md bg-primary/10">
                         <DollarSign className="h-4 w-4 text-primary" />
                       </div>
-                      <h4 className="font-semibold text-foreground">Ganhos</h4>
-                    </div>
+                      Ganhos
+                    </h4>
                     
                     <div className="space-y-4">
-                      <div className="space-y-3">
+                      <div className="space-y-3 flex flex-col">
                         <Label htmlFor="dailyIncome" className="text-sm font-medium">Valor Total no Dia</Label>
                         <div className="relative">
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
@@ -343,7 +343,7 @@ const UberCalculator = () => {
                             className="h-12 pl-10 pr-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
                           />
                         </div>
-                        <p className="text-xs text-muted-foreground/80 bg-muted/30 p-2 rounded-md">
+                        <p className="text-xs text-muted-foreground/80 bg-muted/30 p-3 rounded-md">
                           💡 Valor total recebido durante o dia de trabalho
                         </p>
                       </div>
@@ -359,7 +359,7 @@ const UberCalculator = () => {
                       "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
                       "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
                       "transform hover:scale-[1.02] active:scale-[0.98]",
-                      isFormDisabled && "opacity-50 cursor-not-allowed hover:scale-100"
+                      isFormDisabled && "opacity-50 cursor-not-allowed"
                     )}
                     onClick={calculateUberResults}
                     disabled={isFormDisabled}
@@ -382,135 +382,191 @@ const UberCalculator = () => {
               </form>
             </CardContent>
           </Card>
+        {uberResults && (
+          <CardContent className="space-y-6 p-6 sm:p-8 pt-8 border-t border-border/50 animate-in fade-in-0 duration-500 slide-in-from-bottom-4 rounded-xl">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <BarChart3 className="h-7 w-7 text-primary" />
+              Resumo da Viagem
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+              <div className="bg-zinc-900 border-2 border-red-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-2 mb-2 w-full">
+                  <Car className="h-8 w-8 text-red-400" />
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap w-full text-center">Custo Combustível</span>
+                </div>
+                <span className="text-3xl font-bold text-red-600 whitespace-nowrap w-full text-center">R$ {uberResults.fuelCost.toFixed(2)}</span>
+              </div>
+              <div className="bg-zinc-900 border-2 border-primary/30 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-2 mb-2 w-full">
+                  <DollarSign className="h-7 w-7 text-primary" />
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap w-full text-center">Renda Total</span>
+                </div>
+                <span className="text-3xl font-bold text-primary whitespace-nowrap w-full text-center">R$ {uberResults.totalIncome.toFixed(2)}</span>
+              </div>
+              <div className="bg-zinc-900 border-2 border-emerald-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-2 mb-2 w-full">
+                  <TrendingUp className="h-7 w-7 text-emerald-600" />
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap w-full text-center">Lucro Líquido</span>
+                </div>
+                <span className="text-3xl font-bold text-emerald-600 whitespace-nowrap w-full text-center">R$ {uberResults.netProfit.toFixed(2)}</span>
+              </div>
+              <div className="bg-zinc-900 border-2 border-purple-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-2 mb-2 w-full">
+                  <Route className="h-7 w-7 text-purple-600" />
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap w-full text-center">Lucro por Km</span>
+                </div>
+                <span className="text-3xl font-bold text-purple-600 whitespace-nowrap w-full text-center">R$ {uberResults.profitPerKm.toFixed(2)}</span>
+              </div>
+            </div>
+          </CardContent>
+        )}
         </TabsContent>
 
         <TabsContent value="fuel">
-          <Card className="border shadow-sm bg-card/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Fuel className="h-5 w-5 text-primary" />
+          <Card className="border shadow-lg bg-card p-6 sm:p-8 rounded-xl">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Fuel className="h-6 w-6 text-primary" />
+                </div>
                 Comparação de Combustíveis
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground leading-relaxed">
                 Compare custos entre etanol e gasolina para diferentes distâncias
               </p>
             </CardHeader>
             
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8 p-6 sm:p-8 pt-0">
               <div className="grid gap-6">
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
-                      <Fuel className="h-4 w-4" />
+                <div className="grid lg:grid-cols-2 gap-10">
+                  <div className="space-y-6 mb-8">
+                    <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
+                      <div className="p-1.5 rounded-md bg-primary/10">
+                        <Fuel className="h-4 w-4 text-primary" />
+                      </div>
                       Informações do Etanol
                     </h4>
                     <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="ethanolPrice" className="text-card-foreground">Preço do Etanol (R$)</Label>
-                        <Input
-                          id="ethanolPrice"
-                          type="text"
-                          placeholder="Ex: 4.09"
-                          value={fuelData.ethanolPrice}
-                          onChange={(e) => handleFuelInputChange('ethanolPrice', e.target.value)}
-                          className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground transition-colors duration-200 focus:border-primary"
-                        />
+                      <div className="space-y-3 flex flex-col">
+                        <Label htmlFor="ethanolPrice" className="text-sm font-medium">Preço do Etanol (R$)</Label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                          <Input
+                            id="ethanolPrice"
+                            type="text"
+                            placeholder="Ex: 4.09"
+                            value={fuelData.ethanolPrice}
+                            onChange={(e) => handleFuelInputChange('ethanolPrice', e.target.value)}
+                            className="h-12 pl-10 pr-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
+                          />
+                        </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="ethanolConsumption" className="text-card-foreground">Consumo Etanol (km/L)</Label>
-                        <Input
-                          id="ethanolConsumption"
-                          type="text"
-                          placeholder="Ex: 8.2"
-                          value={fuelData.ethanolConsumption}
-                          onChange={(e) => handleFuelInputChange('ethanolConsumption', e.target.value)}
-                          className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground transition-colors duration-200 focus:border-primary"
-                        />
+                      <div className="space-y-3 flex flex-col">
+                        <Label htmlFor="ethanolConsumption" className="text-sm font-medium">Consumo Etanol (km/L)</Label>
+                        <div className="relative">
+                          <Input
+                            id="ethanolConsumption"
+                            type="text"
+                            placeholder="Ex: 8.2"
+                            value={fuelData.ethanolConsumption}
+                            onChange={(e) => handleFuelInputChange('ethanolConsumption', e.target.value)}
+                            className="h-12 px-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">km/L</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
-                      <Fuel className="h-4 w-4" />
+                  <div className="space-y-6 mb-8">
+                    <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
+                      <div className="p-1.5 rounded-md bg-primary/10">
+                        <Fuel className="h-4 w-4 text-primary" />
+                      </div>
                       Informações da Gasolina
                     </h4>
                     <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="gasolinePrice" className="text-card-foreground">Preço da Gasolina (R$)</Label>
-                        <Input
-                          id="gasolinePrice"
-                          type="text"
-                          placeholder="Ex: 5.80"
-                          value={fuelData.gasolinePrice}
-                          onChange={(e) => handleFuelInputChange('gasolinePrice', e.target.value)}
-                          className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground transition-colors duration-200 focus:border-primary"
-                        />
+                      <div className="space-y-3 flex flex-col">
+                        <Label htmlFor="gasolinePrice" className="text-sm font-medium">Preço da Gasolina (R$)</Label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                          <Input
+                            id="gasolinePrice"
+                            type="text"
+                            placeholder="Ex: 5.80"
+                            value={fuelData.gasolinePrice}
+                            onChange={(e) => handleFuelInputChange('gasolinePrice', e.target.value)}
+                            className="h-12 pl-10 pr-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
+                          />
+                        </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="gasolineConsumption" className="text-card-foreground">Consumo Gasolina (km/L)</Label>
-                        <Input
-                          id="gasolineConsumption"
-                          type="text"
-                          placeholder="Ex: 13.5"
-                          value={fuelData.gasolineConsumption}
-                          onChange={(e) => handleFuelInputChange('gasolineConsumption', e.target.value)}
-                          className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground transition-colors duration-200 focus:border-primary"
-                        />
+                      <div className="space-y-3 flex flex-col">
+                        <Label htmlFor="gasolineConsumption" className="text-sm font-medium">Consumo Gasolina (km/L)</Label>
+                        <div className="relative">
+                          <Input
+                            id="gasolineConsumption"
+                            type="text"
+                            placeholder="Ex: 13.5"
+                            value={fuelData.gasolineConsumption}
+                            onChange={(e) => handleFuelInputChange('gasolineConsumption', e.target.value)}
+                            className="h-12 px-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">km/L</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 border-t border-border/30 pt-6">
-                  <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80">
-                    <Calculator className="h-4 w-4" />
+                <div className="space-y-6 mb-8 border-t border-border/30 pt-6">
+                  <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
+                    <div className="p-1.5 rounded-md bg-primary/10">
+                      <Calculator className="h-4 w-4 text-primary" />
+                    </div>
                     Distâncias para Comparação
                   </h4>
-                  <div className="space-y-2">
-                    <Label htmlFor="distances">Distâncias (km)</Label>
+                  <div className="space-y-3 flex flex-col">
+                    <Label htmlFor="distances" className="text-sm font-medium">Distâncias (km)</Label>
                     <Input
                       id="distances"
                       type="text"
                       placeholder="Ex: 100, 150, 200 ou separe por espaços"
                       value={fuelData.distances}
                       onChange={(e) => handleFuelInputChange('distances', e.target.value)}
-                      className="bg-calculator-input border-calculator-border"
+                      className="h-12 px-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
                     />
                     <p className="text-xs text-muted-foreground">Separe as distâncias por vírgula ou espaços</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-border/30">
+              <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-border/50">
                 <Button
-                  className="flex-1 h-11"
+                  className="flex-1 h-14 text-base font-semibold rounded-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transform hover:scale-[1.02] active:scale-[0.98]"
                   onClick={calculateFuelComparison}
                 >
-                  <Fuel className="h-4 w-4 mr-2" />
+                  <Fuel className="h-5 w-5 mr-3" />
                   Comparar Combustíveis
                 </Button>
                 <Button
                   variant="outline"
-                  className="sm:w-44 h-11"
+                  className="sm:w-48 h-14 text-base font-medium rounded-xl border-2 transition-all duration-300 hover:bg-muted/50 hover:border-primary/50 hover:scale-[1.02] active:scale-[0.98]"
                   onClick={clearFuelFields}
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-5 w-5 mr-3" />
                   Limpar
                 </Button>
               </div>
 
               {fuelComparisons.length > 0 && (
-                <div className="space-y-6 border-t border-border/30 pt-6">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                <div className="space-y-6 border-t border-border/30 p-6 sm:p-8 pt-6 rounded-xl">
+                  <h3 className="font-semibold text-xl flex items-center gap-3">
                     <BarChart3 className="h-5 w-5 text-primary" />
                     Comparação de Custos
                   </h3>
-                  <div className="grid gap-4">
+                  <div className="grid gap-4 mt-6">
                     {fuelComparisons.map((comparison, index) => (
-                      <Card key={index} className="p-4 bg-card/50 border-border/30">
+                      <Card key={index} className="p-4 bg-accent/10 border border-border/50 shadow-sm rounded-lg">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -530,7 +586,7 @@ const UberCalculator = () => {
                             Melhor: {comparison.bestOption}
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                           <div className="bg-red-500/5 p-4 rounded-lg border border-red-500/10">
                             <p className="text-sm font-medium text-red-600">Custo com Etanol</p>
                             <p className="text-lg font-semibold text-red-600 mt-1">
@@ -559,25 +615,6 @@ const UberCalculator = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Dashboard sempre visível abaixo da calculadora */}
-      <div className="w-full max-w-2xl mt-10">
-        {dashboardData ? (
-          <div className="animate-in fade-in-0 duration-500 slide-in-from-bottom-4">
-            <Dashboard dados={dashboardData} />
-          </div>
-        ) : (
-          <Card className="bg-card border-calculator-border shadow-[0_4px_12px_hsl(220_50%_4%/0.4)] mt-8">
-            <div className="flex flex-col items-center justify-center p-12 gap-4">
-              <BarChart3 className="h-12 w-12 text-muted-foreground/50" />
-              <p className="text-muted-foreground text-center">
-                Nenhum dado disponível ainda.<br/>
-                Faça alguns cálculos primeiro para visualizar o dashboard!
-              </p>
-            </div>
-          </Card>
-        )}
-      </div>
     </div>
   );
 };

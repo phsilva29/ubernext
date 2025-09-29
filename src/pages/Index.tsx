@@ -1,20 +1,34 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import UberCalculator from "@/components/UberCalculator";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
+import ViagemService from '@/services/ViagemService';
+import { DadosDashboard } from '@/types';
 
 const Index = () => {
   const { user, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState<DadosDashboard | null>(null);
+
+  const carregarDadosDashboard = useCallback(async () => {
+    try {
+      const dados = await ViagemService.obterDadosDashboard();
+      setDashboardData(dados);
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !user) {
       navigate('/auth');
+    } else if (user) {
+      carregarDadosDashboard();
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, carregarDadosDashboard]);
 
   if (isLoading) {
     return (
@@ -32,7 +46,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20">
+    <div className="min-h-screen bg-background flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Header responsivo */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
@@ -63,13 +77,13 @@ const Index = () => {
         </div>
         
         {/* Calculadora */}
-        <div className="max-w-md mx-auto mb-6 sm:mb-8">
-          <UberCalculator />
+        <div className="w-full max-w-4xl mx-auto mb-6 sm:mb-8">
+          <UberCalculator onDataUpdate={carregarDadosDashboard} />
         </div>
         
         {/* Dashboard */}
         <div className="w-full">
-          <Dashboard />
+          <Dashboard dados={dashboardData || undefined} onDataUpdate={carregarDadosDashboard} />
         </div>
       </div>
     </div>

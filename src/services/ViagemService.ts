@@ -16,7 +16,7 @@ class ViagemService {
         .from('viagens')
         .insert({
           user_id: user.id,
-          data: viagem.data.toISOString().split('T')[0],
+          data: viagem.data,
           km_rodados: viagem.kmRodados,
           preco_gasolina: viagem.precoGasolina,
           consumo: viagem.consumo,
@@ -71,7 +71,7 @@ class ViagemService {
       const { data, error } = await supabase
         .from('viagens')
         .update({
-          data: viagemAtualizada.data.toISOString().split('T')[0],
+          data: viagemAtualizada.data,
           km_rodados: viagemAtualizada.kmRodados,
           preco_gasolina: viagemAtualizada.precoGasolina,
           consumo: viagemAtualizada.consumo,
@@ -142,7 +142,7 @@ class ViagemService {
   private static mapViagemFromDB(dbViagem: any): Viagem {
     return {
       id: dbViagem.id,
-      data: new Date(dbViagem.data),
+      data: new Date(dbViagem.data + 'T00:00:00'), // Trata a data como local para evitar fuso horário
       kmRodados: parseFloat(dbViagem.km_rodados),
       precoGasolina: parseFloat(dbViagem.preco_gasolina),
       consumo: parseFloat(dbViagem.consumo),
