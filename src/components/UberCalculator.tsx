@@ -189,7 +189,7 @@ const UberCalculator = () => {
   return (
     <div className="flex flex-col items-center min-h-screen p-4 bg-background">
       <Tabs defaultValue="uber" className="w-full max-w-2xl">
-        <TabsList className="flex gap-2 w-full rounded-lg p-1 bg-card/60 border border-border/30 shadow-sm mb-6">
+        <TabsList className="flex gap-2 w-full rounded-lg p-1 bg-transparent border border-border/30 shadow-sm mb-6">
           <TabsTrigger value="uber" className="flex-1 flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2">
             <Calculator className="h-4 w-4" />
             Calculadora
