@@ -205,213 +205,258 @@ const UberCalculator = () => {
         </TabsList>
 
         <TabsContent value="uber">
-          <Card className="border shadow-sm bg-card/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Calculator className="h-5 w-5 text-primary" />
+          <Card className="border shadow-lg bg-gradient-to-br from-card/80 to-card backdrop-blur-sm">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Calculator className="h-6 w-6 text-primary" />
+                </div>
                 Calculadora Uber
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Calcule gastos, receita e lucro das suas viagens
+              <p className="text-muted-foreground leading-relaxed">
+                Calcule gastos, receita e lucro das suas viagens de forma rápida e precisa
               </p>
             </CardHeader>
-            <CardContent className="pt-2">
-              <form autoComplete="off">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Coluna 1: Básico */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
-                      <CalendarIcon className="h-4 w-4" /> 
-                      Informações Básicas
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="data">Data da Viagem</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
+            <CardContent className="space-y-8">
+              <form autoComplete="off" className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                  {/* Seção 1: Informações Básicas */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                      <div className="p-1.5 rounded-md bg-primary/10">
+                        <CalendarIcon className="h-4 w-4 text-primary" />
+                      </div>
+                      <h4 className="font-semibold text-foreground">Informações Básicas</h4>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="data" className="text-sm font-medium">Data da Viagem</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              disabled={isFormDisabled}
+                              className={cn(
+                                "w-full justify-start text-left font-normal h-12 px-4 border-2 transition-all duration-200",
+                                "hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20",
+                                !uberData.data && "text-muted-foreground",
+                                isFormDisabled && "opacity-50 cursor-not-allowed"
+                              )}
+                            >
+                              <CalendarIcon className="mr-3 h-4 w-4 text-primary" />
+                              {uberData.data ? format(uberData.data, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={uberData.data}
+                              onSelect={date => handleUberInputChange('data', date as Date)}
+                              initialFocus
+                              locale={ptBR}
+                              className="rounded-lg border bg-card p-3 pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label htmlFor="kmDriven" className="text-sm font-medium">Quilômetros Rodados</Label>
+                        <div className="relative">
+                          <Input
+                            id="kmDriven"
+                            type="text"
+                            placeholder="Ex: 120"
+                            value={uberData.kmDriven}
                             disabled={isFormDisabled}
-                            className={cn(
-                              "w-full justify-start text-left font-normal bg-calculator-input border-calculator-border",
-                              !uberData.data && "text-muted-foreground",
-                              isFormDisabled && "opacity-50 cursor-not-allowed"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                            {uberData.data ? format(uberData.data, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={uberData.data}
-                            onSelect={date => handleUberInputChange('data', date as Date)}
-                            initialFocus
-                            locale={ptBR}
-                            className="rounded-lg border border-border/50 bg-card"
+                            onChange={(e) => handleUberInputChange('kmDriven', e.target.value)}
+                            className="h-12 px-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
                           />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="kmDriven">Quilômetros Rodados</Label>
-                      <Input
-                        id="kmDriven"
-                        type="text"
-                        placeholder="Ex: 120"
-                        value={uberData.kmDriven}
-                        disabled={isFormDisabled}
-                        onChange={(e) => handleUberInputChange('kmDriven', e.target.value)}
-                        className="bg-calculator-input border-calculator-border"
-                      />
-                    </div>
-                  </div>
-                  {/* Coluna 2: Combustível */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
-                      <Fuel className="h-4 w-4" /> 
-                      Combustível
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="gasPrice">Preço da Gasolina</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                        <Input
-                          id="gasPrice"
-                          type="text"
-                          placeholder="Ex: 5.89"
-                          value={uberData.gasPrice}
-                          disabled={isFormDisabled}
-                          onChange={(e) => handleUberInputChange('gasPrice', e.target.value)}
-                          className="pl-8 bg-calculator-input border-calculator-border"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="fuelConsumption">Consumo Médio</Label>
-                      <div className="relative">
-                        <Input
-                          id="fuelConsumption"
-                          type="text"
-                          placeholder="Ex: 12"
-                          value={uberData.fuelConsumption}
-                          disabled={isFormDisabled}
-                          onChange={(e) => handleUberInputChange('fuelConsumption', e.target.value)}
-                          className="pr-12 bg-calculator-input border-calculator-border"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">km/L</span>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">km</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  {/* Coluna 3: Ganhos */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
-                      <DollarSign className="h-4 w-4" /> 
-                      Ganhos
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="dailyIncome">Valor Total no Dia</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                        <Input
-                          id="dailyIncome"
-                          type="text"
-                          placeholder="Ex: 150.00"
-                          value={uberData.dailyIncome}
-                          disabled={isFormDisabled}
-                          onChange={(e) => handleUberInputChange('dailyIncome', e.target.value)}
-                          className="pl-8 bg-calculator-input border-calculator-border"
-                        />
+
+                  {/* Seção 2: Combustível */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                      <div className="p-1.5 rounded-md bg-primary/10">
+                        <Fuel className="h-4 w-4 text-primary" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Valor total recebido durante o dia</p>
+                      <h4 className="font-semibold text-foreground">Combustível</h4>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="gasPrice" className="text-sm font-medium">Preço da Gasolina</Label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                          <Input
+                            id="gasPrice"
+                            type="text"
+                            placeholder="5.89"
+                            value={uberData.gasPrice}
+                            disabled={isFormDisabled}
+                            onChange={(e) => handleUberInputChange('gasPrice', e.target.value)}
+                            className="h-12 pl-10 pr-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label htmlFor="fuelConsumption" className="text-sm font-medium">Consumo Médio</Label>
+                        <div className="relative">
+                          <Input
+                            id="fuelConsumption"
+                            type="text"
+                            placeholder="12"
+                            value={uberData.fuelConsumption}
+                            disabled={isFormDisabled}
+                            onChange={(e) => handleUberInputChange('fuelConsumption', e.target.value)}
+                            className="h-12 px-4 pr-16 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">km/L</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Seção 3: Ganhos */}
+                  <div className="space-y-6 md:col-span-2 xl:col-span-1">
+                    <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                      <div className="p-1.5 rounded-md bg-primary/10">
+                        <DollarSign className="h-4 w-4 text-primary" />
+                      </div>
+                      <h4 className="font-semibold text-foreground">Ganhos</h4>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="dailyIncome" className="text-sm font-medium">Valor Total no Dia</Label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                          <Input
+                            id="dailyIncome"
+                            type="text"
+                            placeholder="150.00"
+                            value={uberData.dailyIncome}
+                            disabled={isFormDisabled}
+                            onChange={(e) => handleUberInputChange('dailyIncome', e.target.value)}
+                            className="h-12 pl-10 pr-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground/80 bg-muted/30 p-2 rounded-md">
+                          💡 Valor total recebido durante o dia de trabalho
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                {/* Botões */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-8 border-t border-border/30 mt-6">
+                
+                {/* Botões de Ação */}
+                <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-border/50">
                   <Button
                     className={cn(
-                      "flex-1 h-11",
-                      isFormDisabled && "opacity-50 cursor-not-allowed"
+                      "flex-1 h-14 text-base font-semibold rounded-xl transition-all duration-300",
+                      "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
+                      "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
+                      "transform hover:scale-[1.02] active:scale-[0.98]",
+                      isFormDisabled && "opacity-50 cursor-not-allowed hover:scale-100"
                     )}
                     onClick={calculateUberResults}
                     disabled={isFormDisabled}
                   >
-                    <Calculator className="h-4 w-4 mr-2" />
-                    {isFormDisabled ? 'Dados Adicionados' : 'Calcular Ganhos'}
+                    <Calculator className="h-5 w-5 mr-3" />
+                    {isFormDisabled ? 'Dados Calculados ✓' : 'Calcular Ganhos'}
                   </Button>
                   <Button
                     variant="outline"
-                    className="sm:w-44 h-11"
+                    className={cn(
+                      "sm:w-48 h-14 text-base font-medium rounded-xl border-2 transition-all duration-300",
+                      "hover:bg-muted/50 hover:border-primary/50 hover:scale-[1.02] active:scale-[0.98]"
+                    )}
                     onClick={clearUberFields}
                   >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", isFormDisabled && "animate-spin")} />
-                    {isFormDisabled ? 'Novo Cálculo' : 'Limpar'}
+                    <RefreshCw className={cn("h-5 w-5 mr-3", isFormDisabled && "animate-spin")} />
+                    {isFormDisabled ? 'Novo Cálculo' : 'Limpar Campos'}
                   </Button>
                 </div>
                 {/* Resultados */}
                 {uberResults && (
-                  <div className="pt-6 space-y-6 border-t border-border/30 mt-6">
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-primary" />
-                      Resultados da Viagem
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Card className="bg-red-500/5 border-red-500/10">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-red-500/90 flex items-center gap-2">
-                            <DollarSign className="h-4 w-4" />
+                  <div className="space-y-8 pt-8 border-t border-border/50 animate-in fade-in-0 duration-700 slide-in-from-bottom-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-green-500/10">
+                        <BarChart3 className="h-6 w-6 text-green-600" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground">Resultados da Viagem</h3>
+                      <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent"></div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <Card className="group relative overflow-hidden border-2 border-red-500/20 bg-gradient-to-br from-red-50/50 to-red-100/30 hover:border-red-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/10">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-full -translate-y-10 translate-x-10"></div>
+                        <CardHeader className="pb-3 relative">
+                          <CardTitle className="text-sm font-semibold text-red-600 flex items-center gap-2">
+                            <Fuel className="h-4 w-4" />
                             Custos com Combustível
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="relative">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-semibold text-red-500/90">
+                            <span className="text-2xl font-bold text-red-600">
                               R$ {uberResults.fuelCost.toFixed(2)}
                             </span>
                           </div>
                         </CardContent>
                       </Card>
-                      <Card className="bg-blue-500/5 border-blue-500/10">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-blue-500/90 flex items-center gap-2">
+
+                      <Card className="group relative overflow-hidden border-2 border-blue-500/20 bg-gradient-to-br from-blue-50/50 to-blue-100/30 hover:border-blue-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-full -translate-y-10 translate-x-10"></div>
+                        <CardHeader className="pb-3 relative">
+                          <CardTitle className="text-sm font-semibold text-blue-600 flex items-center gap-2">
                             <ArrowUp className="h-4 w-4" />
                             Ganhos Totais
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="relative">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-semibold text-blue-500/90">
+                            <span className="text-2xl font-bold text-blue-600">
                               R$ {uberResults.totalIncome.toFixed(2)}
                             </span>
                           </div>
                         </CardContent>
                       </Card>
-                      <Card className="bg-green-500/5 border-green-500/10">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-green-600 flex items-center gap-2">
+
+                      <Card className="group relative overflow-hidden border-2 border-green-500/20 bg-gradient-to-br from-green-50/50 to-green-100/30 hover:border-green-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/10">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/5 rounded-full -translate-y-10 translate-x-10"></div>
+                        <CardHeader className="pb-3 relative">
+                          <CardTitle className="text-sm font-semibold text-green-600 flex items-center gap-2">
                             <CreditCard className="h-4 w-4" />
                             Lucro Líquido
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="relative">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-semibold text-green-600">
+                            <span className="text-2xl font-bold text-green-600">
                               R$ {uberResults.netProfit.toFixed(2)}
                             </span>
                           </div>
                         </CardContent>
                       </Card>
-                      <Card className="bg-green-500/5 border-green-500/10">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-green-600 flex items-center gap-2">
+
+                      <Card className="group relative overflow-hidden border-2 border-emerald-500/20 bg-gradient-to-br from-emerald-50/50 to-emerald-100/30 hover:border-emerald-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-10 translate-x-10"></div>
+                        <CardHeader className="pb-3 relative">
+                          <CardTitle className="text-sm font-semibold text-emerald-600 flex items-center gap-2">
                             <Car className="h-4 w-4" />
                             Lucro por KM
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="relative">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-semibold text-green-600">
+                            <span className="text-2xl font-bold text-emerald-600">
                               R$ {uberResults.profitPerKm.toFixed(2)}
                             </span>
                           </div>
