@@ -31,8 +31,13 @@ interface DadosGrafico {
 type PeriodoVisualizacao = 'diario' | 'semanal' | 'mensal';
 
 export function Dashboard({ dados: dadosProps }: DashboardProps) {
+  // TODOS OS HOOKS DEVEM VIR PRIMEIRO - ANTES DE QUALQUER EARLY RETURN
   const [dados, setDados] = useState<DadosDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [viagemParaEditar, setViagemParaEditar] = useState<Viagem | undefined>(undefined);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [periodoVisualizacao, setPeriodoVisualizacao] = useState<PeriodoVisualizacao>('mensal');
+  const [dadosFiltrados, setDadosFiltrados] = useState<DadosGrafico[]>([]);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -50,6 +55,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
     carregarDados();
   }, []);
 
+  // AGORA PODEMOS TER EARLY RETURNS DEPOIS DE TODOS OS HOOKS
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -65,10 +71,6 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
       </div>
     );
   }
-  const [viagemParaEditar, setViagemParaEditar] = useState<Viagem | undefined>(undefined);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [periodoVisualizacao, setPeriodoVisualizacao] = useState<PeriodoVisualizacao>('mensal');
-  const [dadosFiltrados, setDadosFiltrados] = useState<DadosGrafico[]>([]);
 
   // Função para extrair a data do agrupamento
   function extrairData(dados: DadosGrafico, periodo: PeriodoVisualizacao): Date {
