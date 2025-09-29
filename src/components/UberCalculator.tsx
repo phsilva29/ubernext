@@ -198,10 +198,6 @@ const UberCalculator = () => {
             <Fuel className="h-4 w-4" />
             Combustível
           </TabsTrigger>
-          <TabsTrigger value="dashboard" className="flex-1 flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2">
-            <BarChart3 className="h-4 w-4" />
-            Dashboard
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="uber">
@@ -383,84 +379,6 @@ const UberCalculator = () => {
                     {isFormDisabled ? 'Novo Cálculo' : 'Limpar Campos'}
                   </Button>
                 </div>
-                {/* Resultados */}
-                {uberResults && (
-                  <div className="space-y-8 pt-8 border-t border-border/50 animate-in fade-in-0 duration-700 slide-in-from-bottom-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-green-500/10">
-                        <BarChart3 className="h-6 w-6 text-green-600" />
-                      </div>
-                      <h3 className="text-xl font-bold text-foreground">Resultados da Viagem</h3>
-                      <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent"></div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <Card className="border hover:shadow-lg transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold text-red-600 flex items-center gap-2">
-                            <Fuel className="h-4 w-4" />
-                            Custos com Combustível
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-bold text-red-600">
-                              R$ {uberResults.fuelCost.toFixed(2)}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border hover:shadow-lg transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold text-blue-600 flex items-center gap-2">
-                            <ArrowUp className="h-4 w-4" />
-                            Ganhos Totais
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-bold text-blue-600">
-                              R$ {uberResults.totalIncome.toFixed(2)}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border hover:shadow-lg transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold text-green-600 flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            Lucro Líquido
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-bold text-green-600">
-                              R$ {uberResults.netProfit.toFixed(2)}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border hover:shadow-lg transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold text-emerald-600 flex items-center gap-2">
-                            <Car className="h-4 w-4" />
-                            Lucro por KM
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-bold text-emerald-600">
-                              R$ {uberResults.profitPerKm.toFixed(2)}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                )}
               </form>
             </CardContent>
           </Card>
@@ -640,25 +558,26 @@ const UberCalculator = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="dashboard">
-          {dashboardData ? (
-            <div className="animate-in fade-in-0 duration-500 slide-in-from-bottom-4">
-              <Dashboard dados={dashboardData} />
-            </div>
-          ) : (
-            <Card className="bg-card border-calculator-border shadow-[0_4px_12px_hsl(220_50%_4%/0.4)]">
-              <div className="flex flex-col items-center justify-center p-12 gap-4">
-                <BarChart3 className="h-12 w-12 text-muted-foreground/50" />
-                <p className="text-muted-foreground text-center">
-                  Nenhum dado disponível ainda.<br/>
-                  Faça alguns cálculos primeiro para visualizar o dashboard!
-                </p>
-              </div>
-            </Card>
-          )}
-        </TabsContent>
       </Tabs>
+
+      {/* Dashboard sempre visível abaixo da calculadora */}
+      <div className="w-full max-w-2xl mt-10">
+        {dashboardData ? (
+          <div className="animate-in fade-in-0 duration-500 slide-in-from-bottom-4">
+            <Dashboard dados={dashboardData} />
+          </div>
+        ) : (
+          <Card className="bg-card border-calculator-border shadow-[0_4px_12px_hsl(220_50%_4%/0.4)] mt-8">
+            <div className="flex flex-col items-center justify-center p-12 gap-4">
+              <BarChart3 className="h-12 w-12 text-muted-foreground/50" />
+              <p className="text-muted-foreground text-center">
+                Nenhum dado disponível ainda.<br/>
+                Faça alguns cálculos primeiro para visualizar o dashboard!
+              </p>
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
