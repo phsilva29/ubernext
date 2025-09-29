@@ -487,76 +487,32 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
           <p className="text-sm sm:text-base text-muted-foreground">Visualize e gerencie todas as suas viagens registradas</p>
         </CardHeader>
         <CardContent>
-          {/* Versão Desktop */}
-          <div className="hidden md:block w-full overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Km Rodados</TableHead>
-                  <TableHead>Preço Gasolina</TableHead>
-                  <TableHead>Consumo</TableHead>
-                  <TableHead>Ganhos</TableHead>
-                  <TableHead>Gastos</TableHead>
-                  <TableHead>Lucro</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dadosDashboard?.viagens?.map((viagem) => (
-                  <TableRow key={viagem.id}>
-                    <TableCell>{format(new Date(viagem.data), 'dd/MM/yyyy')}</TableCell>
-                    <TableCell>{viagem.kmRodados} km</TableCell>
-                    <TableCell>R$ {viagem.precoGasolina.toFixed(2)}</TableCell>
-                    <TableCell>{viagem.consumo} km/L</TableCell>
-                    <TableCell>R$ {viagem.valorGanho.toFixed(2)}</TableCell>
-                    <TableCell>R$ {viagem.gastosCombustivel?.toFixed(2)}</TableCell>
-                    <TableCell>R$ {viagem.lucroLiquido?.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleEditar(viagem)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleExcluir(viagem.id!)}
-                          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Versão Mobile */}
-          <div className="md:hidden space-y-4">
+          {/* Cards para todas as telas */}
+          <div className="space-y-4">
             {dadosDashboard?.viagens?.map((viagem) => (
-              <Card key={viagem.id} className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-medium text-sm">
-                      {format(new Date(viagem.data), 'dd/MM/yyyy')}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {viagem.kmRodados} km • {viagem.consumo} km/L
-                    </p>
+              <Card key={viagem.id} className="p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border-2 border-border/50">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <CalendarIcon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base">
+                        {format(new Date(viagem.data), 'dd/MM/yyyy')}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {viagem.kmRodados} km • {viagem.consumo} km/L
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditar(viagem)}
+                      className="hover:bg-primary/10"
                     >
-                      <Pencil className="h-3 w-3" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
@@ -564,26 +520,26 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
                       onClick={() => handleExcluir(viagem.id!)}
                       className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">Ganhos:</span>
-                    <p className="font-medium text-green-600">R$ {viagem.valorGanho.toFixed(2)}</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-green-500/5 p-3 rounded-lg border border-green-500/20">
+                    <span className="text-xs text-green-600 font-medium">Ganhos</span>
+                    <p className="text-lg font-bold text-green-600">R$ {viagem.valorGanho.toFixed(2)}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Gastos:</span>
-                    <p className="font-medium text-red-600">R$ {viagem.gastosCombustivel?.toFixed(2)}</p>
+                  <div className="bg-red-500/5 p-3 rounded-lg border border-red-500/20">
+                    <span className="text-xs text-red-600 font-medium">Gastos</span>
+                    <p className="text-lg font-bold text-red-600">R$ {viagem.gastosCombustivel?.toFixed(2)}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Lucro:</span>
-                    <p className="font-medium text-blue-600">R$ {viagem.lucroLiquido?.toFixed(2)}</p>
+                  <div className="bg-blue-500/5 p-3 rounded-lg border border-blue-500/20">
+                    <span className="text-xs text-blue-600 font-medium">Lucro</span>
+                    <p className="text-lg font-bold text-blue-600">R$ {viagem.lucroLiquido?.toFixed(2)}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Combustível:</span>
-                    <p className="font-medium">R$ {viagem.precoGasolina.toFixed(2)}</p>
+                  <div className="bg-purple-500/5 p-3 rounded-lg border border-purple-500/20">
+                    <span className="text-xs text-purple-600 font-medium">Valor do Combustível</span>
+                    <p className="text-lg font-bold text-purple-600">R$ {viagem.precoGasolina.toFixed(2)}</p>
                   </div>
                 </div>
               </Card>

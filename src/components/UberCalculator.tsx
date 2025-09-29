@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, BarChart3, CalendarIcon, RefreshCw, TrendingUp, Route } from 'lucide-react';
+import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, BarChart3, CalendarIcon, RefreshCw, TrendingUp, TrendingDown, Route } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ViagemService from '@/services/ViagemService';
 
@@ -390,30 +390,30 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
               <div className="bg-zinc-900 border-2 border-red-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
-                <div className="flex items-center gap-2 mb-2 w-full">
-                  <Car className="h-8 w-8 text-red-400" />
-                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap w-full text-center">Custo Combustível</span>
+                <div className="flex items-center gap-2 mb-2 w-full justify-center">
+                  <TrendingDown className="h-8 w-8 text-red-400" />
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Custo Combustível</span>
                 </div>
                 <span className="text-3xl font-bold text-red-600 whitespace-nowrap w-full text-center">R$ {uberResults.fuelCost.toFixed(2)}</span>
               </div>
               <div className="bg-zinc-900 border-2 border-primary/30 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
-                <div className="flex items-center gap-2 mb-2 w-full">
-                  <DollarSign className="h-7 w-7 text-primary" />
-                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap w-full text-center">Renda Total</span>
+                <div className="flex items-center gap-2 mb-2 w-full justify-center">
+                  <DollarSign className="h-8 w-8 text-primary" />
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Renda Total</span>
                 </div>
                 <span className="text-3xl font-bold text-primary whitespace-nowrap w-full text-center">R$ {uberResults.totalIncome.toFixed(2)}</span>
               </div>
-              <div className="bg-zinc-900 border-2 border-emerald-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
-                <div className="flex items-center gap-2 mb-2 w-full">
-                  <TrendingUp className="h-7 w-7 text-emerald-600" />
-                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap w-full text-center">Lucro Líquido</span>
+              <div className="bg-zinc-900 border-2 border-blue-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+                <div className="flex items-center gap-2 mb-2 w-full justify-center">
+                  <TrendingUp className="h-8 w-8 text-blue-600" />
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Lucro Líquido</span>
                 </div>
-                <span className="text-3xl font-bold text-emerald-600 whitespace-nowrap w-full text-center">R$ {uberResults.netProfit.toFixed(2)}</span>
+                <span className="text-3xl font-bold text-blue-600 whitespace-nowrap w-full text-center">R$ {uberResults.netProfit.toFixed(2)}</span>
               </div>
               <div className="bg-zinc-900 border-2 border-purple-400/40 shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
-                <div className="flex items-center gap-2 mb-2 w-full">
-                  <Route className="h-7 w-7 text-purple-600" />
-                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap w-full text-center">Lucro por Km</span>
+                <div className="flex items-center gap-2 mb-2 w-full justify-center">
+                  <Route className="h-8 w-8 text-purple-600" />
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Lucro por Km</span>
                 </div>
                 <span className="text-3xl font-bold text-purple-600 whitespace-nowrap w-full text-center">R$ {uberResults.profitPerKm.toFixed(2)}</span>
               </div>
