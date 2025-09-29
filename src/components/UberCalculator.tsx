@@ -205,8 +205,8 @@ const UberCalculator = () => {
         </TabsList>
 
         <TabsContent value="uber">
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-0">
+          <Card className="border shadow-sm bg-card/50">
+            <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <Calculator className="h-5 w-5 text-primary" />
                 Calculadora Uber
@@ -215,12 +215,15 @@ const UberCalculator = () => {
                 Calcule gastos, receita e lucro das suas viagens
               </p>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-2">
               <form autoComplete="off">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Coluna 1: Básico */}
-                  <div className="flex flex-col gap-4">
-                    <h4 className="text-base font-semibold flex items-center gap-2"><CalendarIcon className="h-4 w-4 text-primary" /> Básico</h4>
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
+                      <CalendarIcon className="h-4 w-4" /> 
+                      Informações Básicas
+                    </h4>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="data">Data da Viagem</Label>
                       <Popover>
@@ -264,8 +267,11 @@ const UberCalculator = () => {
                     </div>
                   </div>
                   {/* Coluna 2: Combustível */}
-                  <div className="flex flex-col gap-4">
-                    <h4 className="text-base font-semibold flex items-center gap-2"><Fuel className="h-4 w-4 text-primary" /> Combustível</h4>
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
+                      <Fuel className="h-4 w-4" /> 
+                      Combustível
+                    </h4>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="gasPrice">Preço da Gasolina</Label>
                       <div className="relative">
@@ -298,8 +304,11 @@ const UberCalculator = () => {
                     </div>
                   </div>
                   {/* Coluna 3: Ganhos */}
-                  <div className="flex flex-col gap-4">
-                    <h4 className="text-base font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" /> Ganhos</h4>
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
+                      <DollarSign className="h-4 w-4" /> 
+                      Ganhos
+                    </h4>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="dailyIncome">Valor Total no Dia</Label>
                       <div className="relative">
@@ -319,10 +328,10 @@ const UberCalculator = () => {
                   </div>
                 </div>
                 {/* Botões */}
-                <div className="col-span-full flex flex-col sm:flex-row gap-3 pt-6">
+                <div className="flex flex-col sm:flex-row gap-3 pt-8 border-t border-border/30 mt-6">
                   <Button
                     className={cn(
-                      "flex-1",
+                      "flex-1 h-11",
                       isFormDisabled && "opacity-50 cursor-not-allowed"
                     )}
                     onClick={calculateUberResults}
@@ -333,7 +342,7 @@ const UberCalculator = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    className="sm:w-40"
+                    className="sm:w-44 h-11"
                     onClick={clearUberFields}
                   >
                     <RefreshCw className={cn("h-4 w-4 mr-2", isFormDisabled && "animate-spin")} />
@@ -342,8 +351,11 @@ const UberCalculator = () => {
                 </div>
                 {/* Resultados */}
                 {uberResults && (
-                  <div className="pt-6 space-y-4">
-                    <h3 className="font-medium">Resultados da Viagem</h3>
+                  <div className="pt-6 space-y-6 border-t border-border/30 mt-6">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                      Resultados da Viagem
+                    </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Card className="bg-red-500/5 border-red-500/10">
                         <CardHeader className="pb-2">
@@ -414,22 +426,25 @@ const UberCalculator = () => {
         </TabsContent>
 
         <TabsContent value="fuel">
-          <Card className="bg-card border-calculator-border shadow-[0_4px_12px_hsl(220_50%_4%/0.4)]">
+          <Card className="border shadow-sm bg-card/50">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-bold text-card-foreground flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <Fuel className="h-5 w-5 text-primary" />
                 Comparação de Combustíveis
               </CardTitle>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Compare custos entre etanol e gasolina para diferentes distâncias
               </p>
             </CardHeader>
             
-            <CardContent className="space-y-8">
+            <CardContent className="space-y-6">
               <div className="grid gap-6">
-                <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto w-full">
-                  <div className="space-y-6">
-                    <h4 className="text-sm font-medium text-primary">Informações do Etanol</h4>
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
+                      <Fuel className="h-4 w-4" />
+                      Informações do Etanol
+                    </h4>
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <Label htmlFor="ethanolPrice" className="text-card-foreground">Preço do Etanol (R$)</Label>
@@ -457,8 +472,11 @@ const UberCalculator = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <h4 className="text-sm font-medium text-primary">Informações da Gasolina</h4>
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80 border-b border-border/30 pb-2">
+                      <Fuel className="h-4 w-4" />
+                      Informações da Gasolina
+                    </h4>
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <Label htmlFor="gasolinePrice" className="text-card-foreground">Preço da Gasolina (R$)</Label>
@@ -487,23 +505,29 @@ const UberCalculator = () => {
                   </div>
                 </div>
 
-                <div className="max-w-xl mx-auto mt-8 space-y-3">
-                  <Label htmlFor="distances" className="text-card-foreground">Distâncias para comparar (km)</Label>
-                  <Input
-                    id="distances"
-                    type="text"
-                    placeholder="Ex: 100, 150, 200 ou separe por espaços"
-                    value={fuelData.distances}
-                    onChange={(e) => handleFuelInputChange('distances', e.target.value)}
-                    className="bg-calculator-input border-calculator-border text-card-foreground placeholder:text-muted-foreground transition-colors duration-200 focus:border-primary text-center"
-                  />
-                  <p className="text-xs text-muted-foreground text-center">Separe as distâncias por vírgula ou espaços</p>
+                <div className="space-y-4 border-t border-border/30 pt-6">
+                  <h4 className="text-sm font-semibold flex items-center gap-2 text-primary/80">
+                    <Calculator className="h-4 w-4" />
+                    Distâncias para Comparação
+                  </h4>
+                  <div className="space-y-2">
+                    <Label htmlFor="distances">Distâncias (km)</Label>
+                    <Input
+                      id="distances"
+                      type="text"
+                      placeholder="Ex: 100, 150, 200 ou separe por espaços"
+                      value={fuelData.distances}
+                      onChange={(e) => handleFuelInputChange('distances', e.target.value)}
+                      className="bg-calculator-input border-calculator-border"
+                    />
+                    <p className="text-xs text-muted-foreground">Separe as distâncias por vírgula ou espaços</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="col-span-full flex flex-col sm:flex-row gap-3 pt-6">
+              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-border/30">
                 <Button
-                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/20"
+                  className="flex-1 h-11"
                   onClick={calculateFuelComparison}
                 >
                   <Fuel className="h-4 w-4 mr-2" />
@@ -511,67 +535,63 @@ const UberCalculator = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full sm:w-40 bg-transparent border-calculator-border text-card-foreground hover:bg-accent/50 hover:border-primary/50 flex items-center justify-center gap-2 transition-all duration-200"
+                  className="sm:w-44 h-11"
                   onClick={clearFuelFields}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw className="h-4 w-4 mr-2" />
                   Limpar
                 </Button>
               </div>
 
               {fuelComparisons.length > 0 && (
-                <div className="mt-12 space-y-8">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-xl text-card-foreground">Comparação de Custos</h3>
-                    <div className="h-px flex-1 bg-border"></div>
-                  </div>
-                  <div className="grid gap-6">
+                <div className="space-y-6 border-t border-border/30 pt-6">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    Comparação de Custos
+                  </h3>
+                  <div className="grid gap-4">
                     {fuelComparisons.map((comparison, index) => (
-                      <div 
-                        key={index} 
-                        className="p-6 bg-accent/30 backdrop-blur-sm rounded-xl border border-border/50 transition-all duration-300 hover:border-primary/50 hover:scale-[1.02] hover:shadow-lg animate-in fade-in-0 duration-500 slide-in-from-bottom-4"
-                        style={{ animationDelay: `${index * 150}ms` }}
-                      >
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                          <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/5">
-                              <span className="font-semibold text-primary text-lg">{comparison.distance}</span>
+                      <Card key={index} className="p-4 bg-card/50 border-border/30">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <span className="font-semibold text-primary">{comparison.distance}</span>
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-muted-foreground">Distância em</p>
-                              <p className="font-semibold text-card-foreground">quilômetros</p>
+                              <p className="text-sm text-muted-foreground">Distância</p>
+                              <p className="font-medium">km</p>
                             </div>
                           </div>
                           <div className={cn(
-                            "px-5 py-2 rounded-full text-sm font-medium transition-colors duration-200",
+                            "px-3 py-1 rounded-full text-xs font-medium",
                             comparison.bestOption === "Etanol" 
-                              ? "bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/30 hover:bg-emerald-500/20" 
-                              : "bg-blue-500/10 text-blue-500 ring-1 ring-blue-500/30 hover:bg-blue-500/20"
+                              ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
+                              : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
                           )}>
-                            Melhor opção: {comparison.bestOption}
+                            Melhor: {comparison.bestOption}
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          <div className="bg-red-500/5 p-5 rounded-xl border border-red-500/10 transition-all duration-200 hover:bg-red-500/10">
-                            <p className="text-sm font-medium text-red-500/90">Custo com Etanol</p>
-                            <p className="text-2xl font-bold text-red-500/90 mt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="bg-red-500/5 p-4 rounded-lg border border-red-500/10">
+                            <p className="text-sm font-medium text-red-600">Custo com Etanol</p>
+                            <p className="text-lg font-semibold text-red-600 mt-1">
                               R$ {comparison.ethanolCost.toFixed(2)}
                             </p>
                           </div>
-                          <div className="bg-red-500/5 p-5 rounded-xl border border-red-500/10 transition-all duration-200 hover:bg-red-500/10">
-                            <p className="text-sm font-medium text-red-500/90">Custo com Gasolina</p>
-                            <p className="text-2xl font-bold text-red-500/90 mt-2">
+                          <div className="bg-red-500/5 p-4 rounded-lg border border-red-500/10">
+                            <p className="text-sm font-medium text-red-600">Custo com Gasolina</p>
+                            <p className="text-lg font-semibold text-red-600 mt-1">
                               R$ {comparison.gasolineCost.toFixed(2)}
                             </p>
                           </div>
-                          <div className="bg-green-500/5 p-6 rounded-xl border border-green-500/10 transition-all duration-200 hover:bg-green-500/10 sm:col-span-2 lg:col-span-1">
-                            <p className="text-sm font-medium text-green-600">Economia Total</p>
-                            <p className="text-2xl font-bold text-green-600 mt-2">
+                          <div className="bg-green-500/5 p-4 rounded-lg border border-green-500/10">
+                            <p className="text-sm font-medium text-green-600">Economia</p>
+                            <p className="text-lg font-semibold text-green-600 mt-1">
                               R$ {comparison.savings.toFixed(2)}
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </Card>
                     ))}
                   </div>
                 </div>
