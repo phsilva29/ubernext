@@ -31,6 +31,52 @@ interface DadosGrafico {
 type PeriodoVisualizacao = 'diario' | 'semanal' | 'mensal';
 
 export function Dashboard({ dados: dadosProps }: DashboardProps) {
+  // FUNÇÃO HELPER DEVE VIR ANTES DOS HOOKS
+  const agruparDadosPorPeriodo = (viagens: Viagem[], periodo: PeriodoVisualizacao): DadosGrafico[] => {
+    const dadosAgrupados = new Map<string, DadosGrafico>();
+
+    viagens.forEach((viagem) => {
+      let chave: string;
+      const data = new Date(viagem.data);
+
+      switch (periodo) {
+        case 'diario': {
+          chave = format(data, 'dd/MM', { locale: ptBR });
+          break;
+        }
+        case 'semanal': {
+          const inicioSemana = startOfWeek(data, { locale: ptBR });
+          const fimSemana = addDays(inicioSemana, 6);
+          chave = `${format(inicioSemana, 'dd/MM/yyyy')} - ${format(fimSemana, 'dd/MM/yyyy')}`;
+          break;
+        }
+        case 'mensal':
+        default: {
+          chave = format(data, 'MMMM/yyyy', { locale: ptBR });
+          break;
+        }
+      }
+
+      const dadosAtuais = dadosAgrupados.get(chave) || {
+        mes: chave,
+        ganhos: 0,
+        gastos: 0,
+        lucro: 0,
+        kmRodados: 0
+      };
+
+      dadosAgrupados.set(chave, {
+        ...dadosAtuais,
+        ganhos: dadosAtuais.ganhos + viagem.valorGanho,
+        gastos: dadosAtuais.gastos + (viagem.gastosCombustivel || 0),
+        lucro: dadosAtuais.lucro + (viagem.lucroLiquido || 0),
+        kmRodados: dadosAtuais.kmRodados + viagem.kmRodados
+      });
+    });
+
+    return Array.from(dadosAgrupados.values());
+  };
+
   // TODOS OS HOOKS DEVEM VIR PRIMEIRO - ANTES DE QUALQUER EARLY RETURN
   const [dados, setDados] = useState<DadosDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +100,14 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
 
     carregarDados();
   }, []);
+
+  // Segundo useEffect que foi movido para cá
+  useEffect(() => {
+    if (dados?.viagens) {
+      const dadosAgrupados = agruparDadosPorPeriodo(dados.viagens, periodoVisualizacao);
+      setDadosFiltrados(dadosAgrupados);
+    }
+  }, [dados?.viagens, periodoVisualizacao]);
 
   // AGORA PODEMOS TER EARLY RETURNS DEPOIS DE TODOS OS HOOKS
   if (isLoading) {
@@ -160,57 +214,7 @@ export function Dashboard({ dados: dadosProps }: DashboardProps) {
     }
   }
 
-  const agruparDadosPorPeriodo = (viagens: Viagem[], periodo: PeriodoVisualizacao): DadosGrafico[] => {
-    const dadosAgrupados = new Map<string, DadosGrafico>();
 
-    viagens.forEach((viagem) => {
-      let chave: string;
-      const data = new Date(viagem.data);
-
-      switch (periodo) {
-        case 'diario': {
-          chave = format(data, 'dd/MM', { locale: ptBR });
-          break;
-        }
-        case 'semanal': {
-          const inicioSemana = startOfWeek(data, { locale: ptBR });
-          const fimSemana = addDays(inicioSemana, 6);
-          chave = `${format(inicioSemana, 'dd/MM/yyyy')} - ${format(fimSemana, 'dd/MM/yyyy')}`;
-          break;
-        }
-        case 'mensal':
-        default: {
-          chave = format(data, 'MMMM/yyyy', { locale: ptBR });
-          break;
-        }
-      }
-
-      const dadosAtuais = dadosAgrupados.get(chave) || {
-        mes: chave,
-        ganhos: 0,
-        gastos: 0,
-        lucro: 0,
-        kmRodados: 0
-      };
-
-      dadosAgrupados.set(chave, {
-        ...dadosAtuais,
-        ganhos: dadosAtuais.ganhos + viagem.valorGanho,
-        gastos: dadosAtuais.gastos + (viagem.gastosCombustivel || 0),
-        lucro: dadosAtuais.lucro + (viagem.lucroLiquido || 0),
-        kmRodados: dadosAtuais.kmRodados + viagem.kmRodados
-      });
-    });
-
-    return Array.from(dadosAgrupados.values());
-  };
-
-  useEffect(() => {
-    if (dados.viagens) {
-      const dadosAgrupados = agruparDadosPorPeriodo(dados.viagens, periodoVisualizacao);
-      setDadosFiltrados(dadosAgrupados);
-    }
-  }, [dados.viagens, periodoVisualizacao]);
 
   const handleEditar = (viagem: Viagem) => {
     setViagemParaEditar(viagem);
