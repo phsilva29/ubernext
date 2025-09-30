@@ -108,7 +108,7 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
 
     try {
       await ViagemService.salvarViagem({
-        data: format(uberData.data, 'yyyy-MM-dd'),
+        data: uberData.data,
         kmRodados: km,
         precoGasolina: gasPrice,
         consumo: consumption,
@@ -578,9 +578,9 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                     Comparação de Custos
                   </h3>
                   <div className="grid gap-3 sm:gap-4 mt-4 sm:mt-6">
-                    {fuelComparisons.map((comparison, index) => (
-                      <Card key={index} className="p-4 bg-accent/10 border border-border/50 shadow-sm rounded-lg">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                     {fuelComparisons.map((comparison, index) => (
+                      <div key={index} className="space-y-4">
+                        <div className="flex items-center justify-between px-2">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                               <span className="font-semibold text-primary">{comparison.distance}</span>
@@ -600,26 +600,35 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                          <div className="bg-red-500/5 p-4 rounded-lg border border-red-500/10">
-                            <p className="text-sm font-medium text-red-600">Custo com Etanol</p>
-                            <p className="text-lg font-semibold text-red-600 mt-1">
+                          <div className="bg-zinc-900 border-2 border-red-400/40 shadow-2xl rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300">
+                            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 w-full justify-center">
+                              <Fuel className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
+                              <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Custo Etanol</span>
+                            </div>
+                            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 whitespace-nowrap w-full text-center">
                               R$ {comparison.ethanolCost.toFixed(2)}
-                            </p>
+                            </span>
                           </div>
-                          <div className="bg-red-500/5 p-4 rounded-lg border border-red-500/10">
-                            <p className="text-sm font-medium text-red-600">Custo com Gasolina</p>
-                            <p className="text-lg font-semibold text-red-600 mt-1">
+                          <div className="bg-zinc-900 border-2 border-red-400/40 shadow-2xl rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300">
+                            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 w-full justify-center">
+                              <Fuel className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
+                              <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Custo Gasolina</span>
+                            </div>
+                            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 whitespace-nowrap w-full text-center">
                               R$ {comparison.gasolineCost.toFixed(2)}
-                            </p>
+                            </span>
                           </div>
-                          <div className="bg-green-500/5 p-4 rounded-lg border border-green-500/10">
-                            <p className="text-sm font-medium text-green-600">Economia</p>
-                            <p className="text-lg font-semibold text-green-600 mt-1">
+                          <div className="bg-zinc-900 border-2 border-green-400/40 shadow-2xl rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all duration-300">
+                            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 w-full justify-center">
+                              <TrendingDown className="h-6 w-6 sm:h-8 sm:w-8 text-green-400" />
+                              <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Economia</span>
+                            </div>
+                            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600 whitespace-nowrap w-full text-center">
                               R$ {comparison.savings.toFixed(2)}
-                            </p>
+                            </span>
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
                 </div>

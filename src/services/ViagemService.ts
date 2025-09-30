@@ -12,11 +12,15 @@ class ViagemService {
       const lucroLiquido = viagem.valorGanho - gastosCombustivel;
       const lucroKm = lucroLiquido / viagem.kmRodados;
 
+      const viagemData = typeof viagem.data === 'string' 
+        ? viagem.data 
+        : viagem.data.toISOString().split('T')[0];
+
       const { data, error } = await supabase
         .from('viagens')
-        .insert({
+        .insert([{
           user_id: user.id,
-          data: viagem.data,
+          data: viagemData,
           km_rodados: viagem.kmRodados,
           preco_gasolina: viagem.precoGasolina,
           consumo: viagem.consumo,
@@ -24,7 +28,7 @@ class ViagemService {
           gastos_combustivel: gastosCombustivel,
           lucro_liquido: lucroLiquido,
           lucro_km: lucroKm
-        })
+        }])
         .select()
         .single();
 
@@ -68,10 +72,14 @@ class ViagemService {
       const lucroLiquido = viagemAtualizada.valorGanho - gastosCombustivel;
       const lucroKm = lucroLiquido / viagemAtualizada.kmRodados;
 
+      const viagemData = typeof viagemAtualizada.data === 'string' 
+        ? viagemAtualizada.data 
+        : viagemAtualizada.data.toISOString().split('T')[0];
+      
       const { data, error } = await supabase
         .from('viagens')
         .update({
-          data: viagemAtualizada.data,
+          data: viagemData,
           km_rodados: viagemAtualizada.kmRodados,
           preco_gasolina: viagemAtualizada.precoGasolina,
           consumo: viagemAtualizada.consumo,
