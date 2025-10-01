@@ -443,13 +443,11 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
           </CardContent>
         )}
         
-        {isFormDisabled && (
-          <OutrasDespesas 
-            despesas={outrasDespesas} 
-            onDespesasChange={loadDespesas}
-            isFormDisabled={isFormDisabled}
-          />
-        )}
+        <OutrasDespesas 
+          despesas={outrasDespesas} 
+          onDespesasChange={loadDespesas}
+          isFormDisabled={false}
+        />
         </TabsContent>
 
         <TabsContent value="fuel">
