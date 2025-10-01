@@ -10,6 +10,13 @@ export interface Viagem {
   lucroKm?: number;
 }
 
+export interface OutraDespesa {
+  id?: string;
+  description: string;
+  amount: number;
+  created_at?: string;
+}
+
 export interface DadosDashboard {
   viagens: Viagem[];
   totalViagens: number;

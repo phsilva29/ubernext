@@ -11,6 +11,9 @@ import { ptBR } from "date-fns/locale";
 import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, BarChart3, CalendarIcon, RefreshCw, TrendingUp, TrendingDown, Route } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ViagemService from '@/services/ViagemService';
+import OutrasDespesas from '@/components/OutrasDespesas';
+import OutrasDespesasService from '@/services/OutrasDespesasService';
+import { OutraDespesa } from '@/types';
 
 interface CalculationResult {
   fuelCost: number;
@@ -51,12 +54,19 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
 
   const [uberResults, setUberResults] = useState<CalculationResult | null>(null);
   const [fuelComparisons, setFuelComparisons] = useState<FuelComparison[]>([]);
+  const [outrasDespesas, setOutrasDespesas] = useState<OutraDespesa[]>([]);
 
   // Estado para controlar o popover do calendário
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
 
   useEffect(() => {
+    loadDespesas();
   }, []);
+
+  const loadDespesas = async () => {
+    const despesas = await OutrasDespesasService.obterDespesas();
+    setOutrasDespesas(despesas);
+  };
 
   const handleUberInputChange = (field: keyof typeof uberData, value: Date | string) => {
     if (field === 'data') {
@@ -431,6 +441,14 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
               </div>
             </div>
           </CardContent>
+        )}
+        
+        {isFormDisabled && (
+          <OutrasDespesas 
+            despesas={outrasDespesas} 
+            onDespesasChange={loadDespesas}
+            isFormDisabled={isFormDisabled}
+          />
         )}
         </TabsContent>
 
