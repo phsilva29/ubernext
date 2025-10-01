@@ -445,7 +445,12 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
         
         <OutrasDespesas 
           despesas={outrasDespesas} 
-          onDespesasChange={loadDespesas}
+          onDespesasChange={() => {
+            loadDespesas();
+            if (onDataUpdate) {
+              onDataUpdate();
+            }
+          }}
           isFormDisabled={false}
         />
         </TabsContent>

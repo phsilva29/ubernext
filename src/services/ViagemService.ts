@@ -1,5 +1,6 @@
 import { Viagem, DadosDashboard } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import OutrasDespesasService from './OutrasDespesasService';
 
 class ViagemService {
   // Salvar uma nova viagem
@@ -125,14 +126,21 @@ class ViagemService {
   static async obterDadosDashboard(): Promise<DadosDashboard> {
     try {
       const viagens = await this.obterViagens();
+      const outrasDespesas = await OutrasDespesasService.obterDespesas();
+      const totalOutrasDespesas = outrasDespesas.reduce((acc, d) => acc + d.amount, 0);
+      
+      const totalGastosCombustivel = viagens.reduce((acc, v) => acc + (v.gastosCombustivel || 0), 0);
+      const totalGastos = totalGastosCombustivel + totalOutrasDespesas;
+      const totalGanhos = viagens.reduce((acc, v) => acc + v.valorGanho, 0);
+      const lucroTotal = totalGanhos - totalGastos;
       
       const dadosDashboard: DadosDashboard = {
         viagens,
         totalViagens: viagens.length,
         totalKmRodados: viagens.reduce((acc, v) => acc + v.kmRodados, 0),
-        totalGanhos: viagens.reduce((acc, v) => acc + v.valorGanho, 0),
-        totalGastos: viagens.reduce((acc, v) => acc + (v.gastosCombustivel || 0), 0),
-        lucroTotal: viagens.reduce((acc, v) => acc + (v.lucroLiquido || 0), 0),
+        totalGanhos,
+        totalGastos,
+        lucroTotal,
         mediaLucroPorKm: viagens.length > 0 ? viagens.reduce((acc, v) => acc + (v.lucroKm || 0), 0) / viagens.length : 0,
         mediaConsumo: viagens.length > 0 ? viagens.reduce((acc, v) => acc + v.consumo, 0) / viagens.length : 0,
         historicoMensal: this.calcularHistoricoMensal(viagens),
