@@ -1,14 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Line, LineChart, Legend, PieChart, Pie, Cell } from "recharts";
-import { DadosDashboard, Viagem } from "@/types";
+import { DadosDashboard, Viagem, OutraDespesa } from "@/types";
 import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import React, { useState, useEffect, useRef } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2, DollarSign, TrendingUp, TrendingDown, Car, Fuel, Route } from "lucide-react";
+import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2, DollarSign, TrendingUp, TrendingDown, Car, Fuel, Route, Receipt, Plus } from "lucide-react";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import ViagemService from "@/services/ViagemService";
+import OutrasDespesasService from "@/services/OutrasDespesasService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -197,6 +198,17 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
   const [dialogOpen, setDialogOpen] = useState(false);
   const [periodoVisualizacao, setPeriodoVisualizacao] = useState<PeriodoVisualizacao>('mensal');
   const [dadosFiltrados, setDadosFiltrados] = useState<DadosGrafico[]>([]);
+  const [despesas, setDespesas] = useState<OutraDespesa[]>([]);
+  const [despesasDialogOpen, setDespesasDialogOpen] = useState(false);
+
+  // Load expenses
+  useEffect(() => {
+    const carregarDespesas = async () => {
+      const despesasCarregadas = await OutrasDespesasService.obterDespesas();
+      setDespesas(despesasCarregadas);
+    };
+    carregarDespesas();
+  }, []);
 
   useEffect(() => {
     setIsLoading(!dadosDashboard);
@@ -221,6 +233,22 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
 
   // Nunca retorne antes dos cards de resumo. Se não houver dados, mostre zero animado.
   const periodoSelecionado = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
+
+  // Calculate total expenses (non-trip specific)
+  const totalDespesasGerais = despesas
+    .filter(d => !d.tripId)
+    .reduce((acc, d) => acc + d.amount, 0);
+
+  // Calculate adjusted net profit (earnings - fuel costs - general expenses)
+  const lucroAjustado = (periodoSelecionado ? periodoSelecionado.lucro : 0) - totalDespesasGerais;
+
+  const handleRecarregarDespesas = async () => {
+    const despesasAtualizadas = await OutrasDespesasService.obterDespesas();
+    setDespesas(despesasAtualizadas);
+    if (onDataUpdate) {
+      onDataUpdate();
+    }
+  };
 
 
   const handleEditar = (viagem: Viagem) => {
@@ -313,36 +341,57 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
           </CardHeader>
           <CardContent>
             <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
-              R$ {(periodoSelecionado ? periodoSelecionado.lucro : 0).toFixed(2)}
+              R$ {lucroAjustado.toFixed(2)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Média: R$ {(periodoSelecionado && periodoSelecionado.kmRodados > 0 ? (periodoSelecionado.lucro / periodoSelecionado.kmRodados) : 0).toFixed(2)} por viagem
+              {totalDespesasGerais > 0 ? `Após R$ ${totalDespesasGerais.toFixed(2)} em despesas` : 'Sem despesas extras'}
             </p>
           </CardContent>
         </Card>
         </div>
 
-        <div key={periodoSelecionado ? periodoSelecionado.mes + '-lucrokm' : 'lucrokm'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
-        <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-purple-400/40">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-600/5"></div>
+        <div key={periodoSelecionado ? periodoSelecionado.mes + '-despesas' : 'despesas'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
+        <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-orange-400/40">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-orange-600/5"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Lucro por KM</CardTitle>
-            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <Route className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Outras Despesas</CardTitle>
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+              <Receipt className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-purple-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
-              R$ {(periodoSelecionado && periodoSelecionado.kmRodados > 0 ? (periodoSelecionado.lucro / periodoSelecionado.kmRodados) : 0).toFixed(2)}
+            <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-orange-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+              R$ {totalDespesasGerais.toFixed(2)}
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
-              <Route className="h-3 w-3" />
-              {periodoSelecionado ? periodoSelecionado.kmRodados.toFixed(0) : '0'} km percorridos
-            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDespesasDialogOpen(true)}
+              className="text-xs sm:text-sm text-muted-foreground hover:text-orange-600 p-0 h-auto"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Gerenciar despesas
+            </Button>
           </CardContent>
         </Card>
         </div>
       </div>
+
+      {/* Expenses Dialog */}
+      <Dialog open={despesasDialogOpen} onOpenChange={setDespesasDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-orange-500" />
+              Gerenciar Outras Despesas
+            </DialogTitle>
+          </DialogHeader>
+          <ExpensesManager 
+            despesas={despesas.filter(d => !d.tripId)} 
+            onDespesasChange={handleRecarregarDespesas}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Gráficos */}
       <Card className="w-full transition-all duration-500 animate-in fade-in-0 slide-in-from-bottom-4">
@@ -543,11 +592,18 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
                     <p className="text-sm sm:text-base md:text-lg font-bold text-blue-600 truncate">R$ {viagem.lucroLiquido?.toFixed(2)}</p>
                   </div>
                   <div className="bg-purple-500/5 p-2 sm:p-3 rounded-lg border border-purple-500/20">
-                    <span className="text-xs text-purple-600 font-medium hidden sm:inline">Valor do Combustível</span>
+                     <span className="text-xs text-purple-600 font-medium hidden sm:inline">Valor do Combustível</span>
                     <span className="text-xs text-purple-600 font-medium sm:hidden">Combustível</span>
                     <p className="text-sm sm:text-base md:text-lg font-bold text-purple-600 truncate">R$ {viagem.precoGasolina.toFixed(2)}</p>
                   </div>
                 </div>
+                
+                {/* Trip Expenses */}
+                <TripExpenses 
+                  tripId={viagem.id!} 
+                  despesas={despesas.filter(d => d.tripId === viagem.id)}
+                  onDespesasChange={handleRecarregarDespesas}
+                />
               </Card>
             ))}
           </div>
@@ -687,5 +743,395 @@ const EditarViagemDialog = ({ isOpen, onClose, onSave, viagem, onDataUpdate }: V
         </form>
       </DialogContent>
     </Dialog>
+  );
+};
+
+// Expenses Manager Component
+interface ExpensesManagerProps {
+  despesas: OutraDespesa[];
+  onDespesasChange: () => void;
+}
+
+const ExpensesManager = ({ despesas, onDespesasChange }: ExpensesManagerProps) => {
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [category, setCategory] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleAddExpense = async () => {
+    if (!description.trim() || !amount) {
+      alert('Preencha a descrição e o valor da despesa');
+      return;
+    }
+
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      alert('Insira um valor válido para a despesa');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await OutrasDespesasService.salvarDespesa({
+        description: description.trim(),
+        amount: amountValue,
+        date: date,
+        category: category.trim() || undefined
+      });
+
+      setDescription('');
+      setAmount('');
+      setDate(new Date().toISOString().split('T')[0]);
+      setCategory('');
+      onDespesasChange();
+    } catch (error) {
+      console.error('Erro ao adicionar despesa:', error);
+      alert('Erro ao adicionar despesa');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    if (!confirm('Deseja realmente excluir esta despesa?')) return;
+
+    setIsLoading(true);
+    try {
+      await OutrasDespesasService.excluirDespesa(id);
+      onDespesasChange();
+    } catch (error) {
+      console.error('Erro ao excluir despesa:', error);
+      alert('Erro ao excluir despesa');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const totalDespesas = despesas.reduce((acc, despesa) => acc + despesa.amount, 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="expense-description">Descrição</Label>
+          <Input
+            id="expense-description"
+            type="text"
+            placeholder="Ex: Pedágio, Estacionamento, Manutenção..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="expense-amount">Valor (R$)</Label>
+          <Input
+            id="expense-amount"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="expense-date">Data</Label>
+          <Input
+            id="expense-date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="expense-category">Categoria (opcional)</Label>
+          <Input
+            id="expense-category"
+            type="text"
+            placeholder="Ex: Transporte, Manutenção..."
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+      </div>
+
+      <Button
+        onClick={handleAddExpense}
+        disabled={isLoading}
+        className="w-full bg-orange-500 hover:bg-orange-600"
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Adicionar Despesa
+      </Button>
+
+      {despesas.length > 0 && (
+        <div className="space-y-3 mt-6">
+          <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            Despesas Cadastradas
+          </h4>
+          <div className="space-y-2">
+            {despesas.map((despesa) => (
+              <div
+                key={despesa.id}
+                className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:border-orange-500/50 transition-all"
+              >
+                <div className="flex items-center gap-3 flex-1">
+                  <Receipt className="h-5 w-5 text-red-500" />
+                  <div>
+                    <p className="font-medium">{despesa.description}</p>
+                    <div className="flex gap-2 text-xs text-muted-foreground">
+                      {despesa.date && <span>{new Date(despesa.date).toLocaleDateString('pt-BR')}</span>}
+                      {despesa.category && <span>• {despesa.category}</span>}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-lg font-bold text-red-500 whitespace-nowrap">
+                    - R$ {despesa.amount.toFixed(2)}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteExpense(despesa.id!)}
+                    disabled={isLoading}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between p-4 bg-orange-500/10 rounded-lg border-2 border-orange-500/30">
+              <span className="font-semibold">Total de Despesas:</span>
+              <span className="text-xl font-bold text-orange-500">
+                R$ {totalDespesas.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {despesas.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <Receipt className="h-12 w-12 mx-auto mb-3 opacity-30" />
+          <p>Nenhuma despesa registrada</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Trip Expenses Component
+interface TripExpensesProps {
+  tripId: string;
+  despesas: OutraDespesa[];
+  onDespesasChange: () => void;
+}
+
+const TripExpenses = ({ tripId, despesas, onDespesasChange }: TripExpensesProps) => {
+  const [showExpenses, setShowExpenses] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  if (despesas.length === 0 && !showExpenses) {
+    return (
+      <div className="mt-3 pt-3 border-t">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setDialogOpen(true)}
+          className="text-xs text-muted-foreground hover:text-orange-600"
+        >
+          <Plus className="h-3 w-3 mr-1" />
+          Adicionar despesa da viagem
+        </Button>
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Despesas da Viagem</DialogTitle>
+            </DialogHeader>
+            <TripExpenseForm 
+              tripId={tripId} 
+              onSuccess={() => {
+                onDespesasChange();
+                setDialogOpen(false);
+              }} 
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  const totalDespesasViagem = despesas.reduce((acc, d) => acc + d.amount, 0);
+
+  return (
+    <div className="mt-3 pt-3 border-t space-y-2">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+          <Receipt className="h-3 w-3" />
+          Despesas da Viagem
+        </h4>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowExpenses(!showExpenses)}
+          className="text-xs h-6"
+        >
+          {showExpenses ? 'Ocultar' : 'Ver'} ({despesas.length})
+        </Button>
+      </div>
+
+      {showExpenses && (
+        <div className="space-y-2">
+          {despesas.map((despesa) => (
+            <div
+              key={despesa.id}
+              className="flex items-center justify-between p-2 bg-red-500/5 rounded border border-red-500/20 text-xs"
+            >
+              <div className="flex-1">
+                <p className="font-medium">{despesa.description}</p>
+                {despesa.category && <p className="text-muted-foreground">{despesa.category}</p>}
+              </div>
+              <span className="font-bold text-red-500 whitespace-nowrap">
+                - R$ {despesa.amount.toFixed(2)}
+              </span>
+            </div>
+          ))}
+          <div className="flex items-center justify-between p-2 bg-orange-500/10 rounded border border-orange-500/30 font-semibold text-xs">
+            <span>Total:</span>
+            <span className="text-orange-600">R$ {totalDespesasViagem.toFixed(2)}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDialogOpen(true)}
+            className="w-full text-xs"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Adicionar mais
+          </Button>
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Despesas da Viagem</DialogTitle>
+              </DialogHeader>
+              <TripExpenseForm 
+                tripId={tripId} 
+                onSuccess={() => {
+                  onDespesasChange();
+                  setDialogOpen(false);
+                }} 
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Trip Expense Form Component
+interface TripExpenseFormProps {
+  tripId: string;
+  onSuccess: () => void;
+}
+
+const TripExpenseForm = ({ tripId, onSuccess }: TripExpenseFormProps) => {
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!description.trim() || !amount) {
+      alert('Preencha a descrição e o valor da despesa');
+      return;
+    }
+
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      alert('Insira um valor válido para a despesa');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await OutrasDespesasService.salvarDespesa({
+        description: description.trim(),
+        amount: amountValue,
+        tripId: tripId,
+        category: category.trim() || undefined
+      });
+
+      setDescription('');
+      setAmount('');
+      setCategory('');
+      onSuccess();
+    } catch (error) {
+      console.error('Erro ao adicionar despesa:', error);
+      alert('Erro ao adicionar despesa');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="trip-expense-description">Descrição</Label>
+        <Input
+          id="trip-expense-description"
+          type="text"
+          placeholder="Ex: Pedágio, Estacionamento..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={isLoading}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="trip-expense-amount">Valor (R$)</Label>
+        <Input
+          id="trip-expense-amount"
+          type="number"
+          step="0.01"
+          placeholder="0.00"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          disabled={isLoading}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="trip-expense-category">Categoria (opcional)</Label>
+        <Input
+          id="trip-expense-category"
+          type="text"
+          placeholder="Ex: Transporte, Alimentação..."
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          disabled={isLoading}
+        />
+      </div>
+
+      <Button type="submit" disabled={isLoading} className="w-full bg-orange-500 hover:bg-orange-600">
+        <Plus className="h-4 w-4 mr-2" />
+        Adicionar Despesa
+      </Button>
+    </form>
   );
 };

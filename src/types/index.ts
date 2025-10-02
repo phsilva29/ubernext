@@ -12,8 +12,11 @@ export interface Viagem {
 
 export interface OutraDespesa {
   id?: string;
+  tripId?: string;
   description: string;
   amount: number;
+  date?: string;
+  category?: string;
   created_at?: string;
 }
 
