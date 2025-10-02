@@ -17,46 +17,29 @@ export type Database = {
       outras_despesas: {
         Row: {
           amount: number
-          category: string | null
           created_at: string
-          date: string | null
           description: string
           id: string
-          trip_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           amount: number
-          category?: string | null
           created_at?: string
-          date?: string | null
           description: string
           id?: string
-          trip_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           amount?: number
-          category?: string | null
           created_at?: string
-          date?: string | null
           description?: string
           id?: string
-          trip_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "outras_despesas_trip_id_fkey"
-            columns: ["trip_id"]
-            isOneToOne: false
-            referencedRelation: "viagens"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {

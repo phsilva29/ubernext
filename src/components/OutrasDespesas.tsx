@@ -11,15 +11,11 @@ interface OutrasDespesasProps {
   despesas: OutraDespesa[];
   onDespesasChange: () => void;
   isFormDisabled: boolean;
-  tripId?: string;
-  showDateAndCategory?: boolean;
 }
 
-const OutrasDespesas = ({ despesas, onDespesasChange, isFormDisabled, tripId, showDateAndCategory = false }: OutrasDespesasProps) => {
+const OutrasDespesas = ({ despesas, onDespesasChange, isFormDisabled }: OutrasDespesasProps) => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [category, setCategory] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAmountChange = (value: string) => {
@@ -43,16 +39,11 @@ const OutrasDespesas = ({ despesas, onDespesasChange, isFormDisabled, tripId, sh
     try {
       await OutrasDespesasService.salvarDespesa({
         description: description.trim(),
-        amount: amountValue,
-        tripId: tripId,
-        date: date,
-        category: category.trim() || undefined
+        amount: amountValue
       });
 
       setDescription('');
       setAmount('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setCategory('');
       onDespesasChange();
     } catch (error) {
       console.error('Erro ao adicionar despesa:', error);
@@ -159,21 +150,12 @@ const OutrasDespesas = ({ despesas, onDespesasChange, isFormDisabled, tripId, sh
                   data-testid={`despesa-item-${despesa.id}`}
                   className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:border-orange-500/50 transition-all duration-200"
                 >
-                  <div className="flex items-center gap-3">
-                    <Receipt className="h-5 w-5 text-red-500" />
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{despesa.description}</p>
-                      {showDateAndCategory && (
-                        <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                          {despesa.date && <span>{new Date(despesa.date).toLocaleDateString('pt-BR')}</span>}
-                          {despesa.category && <span>• {despesa.category}</span>}
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">{despesa.description}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-lg font-bold text-red-500 whitespace-nowrap">
-                      - R$ {despesa.amount.toFixed(2)}
+                    <span className="text-lg font-bold text-orange-500 whitespace-nowrap">
+                      R$ {despesa.amount.toFixed(2)}
                     </span>
                     {!isFormDisabled && (
                       <Button
