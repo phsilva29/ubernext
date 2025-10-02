@@ -1,5 +1,6 @@
 import { Viagem, DadosDashboard } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import OutrasDespesasService from './OutrasDespesasService';
 
 class ViagemService {
   // Salvar uma nova viagem
@@ -27,8 +28,7 @@ class ViagemService {
           valor_ganho: viagem.valorGanho,
           gastos_combustivel: gastosCombustivel,
           lucro_liquido: lucroLiquido,
-          lucro_km: lucroKm,
-          outras_despesas: viagem.outrasDespesas || 0
+          lucro_km: lucroKm
         }])
         .select()
         .single();
@@ -87,8 +87,7 @@ class ViagemService {
           valor_ganho: viagemAtualizada.valorGanho,
           gastos_combustivel: gastosCombustivel,
           lucro_liquido: lucroLiquido,
-          lucro_km: lucroKm,
-          outras_despesas: viagemAtualizada.outrasDespesas || 0
+          lucro_km: lucroKm
         })
         .eq('id', id)
         .eq('user_id', user.id)
@@ -127,13 +126,14 @@ class ViagemService {
   static async obterDadosDashboard(): Promise<DadosDashboard> {
     try {
       const viagens = await this.obterViagens();
-
+      const outrasDespesas = await OutrasDespesasService.obterDespesas();
+      const totalOutrasDespesas = outrasDespesas.reduce((acc, d) => acc + d.amount, 0);
+      
       const totalGastosCombustivel = viagens.reduce((acc, v) => acc + (v.gastosCombustivel || 0), 0);
-      const totalOutrasDespesas = viagens.reduce((acc, v) => acc + (v.outrasDespesas || 0), 0);
       const totalGastos = totalGastosCombustivel + totalOutrasDespesas;
       const totalGanhos = viagens.reduce((acc, v) => acc + v.valorGanho, 0);
       const lucroTotal = totalGanhos - totalGastos;
-
+      
       const dadosDashboard: DadosDashboard = {
         viagens,
         totalViagens: viagens.length,
@@ -141,7 +141,6 @@ class ViagemService {
         totalGanhos,
         totalGastos,
         lucroTotal,
-        totalOutrasDespesas,
         mediaLucroPorKm: viagens.length > 0 ? viagens.reduce((acc, v) => acc + (v.lucroKm || 0), 0) / viagens.length : 0,
         mediaConsumo: viagens.length > 0 ? viagens.reduce((acc, v) => acc + v.consumo, 0) / viagens.length : 0,
         historicoMensal: this.calcularHistoricoMensal(viagens),
@@ -166,8 +165,7 @@ class ViagemService {
       valorGanho: parseFloat(dbViagem.valor_ganho),
       gastosCombustivel: dbViagem.gastos_combustivel ? parseFloat(dbViagem.gastos_combustivel) : undefined,
       lucroLiquido: dbViagem.lucro_liquido ? parseFloat(dbViagem.lucro_liquido) : undefined,
-      lucroKm: dbViagem.lucro_km ? parseFloat(dbViagem.lucro_km) : undefined,
-      outrasDespesas: dbViagem.outras_despesas ? parseFloat(dbViagem.outras_despesas) : undefined
+      lucroKm: dbViagem.lucro_km ? parseFloat(dbViagem.lucro_km) : undefined
     };
   }
 

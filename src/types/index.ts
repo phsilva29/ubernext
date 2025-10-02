@@ -8,13 +8,15 @@ export interface Viagem {
   gastosCombustivel?: number;
   lucroLiquido?: number;
   lucroKm?: number;
-  outrasDespesas?: number;
 }
 
 export interface OutraDespesa {
   id?: string;
+  tripId?: string;
   description: string;
   amount: number;
+  date?: string;
+  category?: string;
   created_at?: string;
 }
 
@@ -27,7 +29,6 @@ export interface DadosDashboard {
   lucroTotal: number;
   mediaLucroPorKm: number;
   mediaConsumo: number;
-  totalOutrasDespesas: number;
   historicoMensal: {
     mes: string;
     ganhos: number;
