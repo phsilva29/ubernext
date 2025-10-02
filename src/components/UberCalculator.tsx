@@ -8,12 +8,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, BarChart3, CalendarIcon, RefreshCw, TrendingUp, TrendingDown, Route } from 'lucide-react';
+import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, ChartBar as BarChart3, Calendar as CalendarIcon, RefreshCw, TrendingUp, TrendingDown, Route } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ViagemService from '@/services/ViagemService';
-import OutrasDespesas from '@/components/OutrasDespesas';
-import OutrasDespesasService from '@/services/OutrasDespesasService';
-import { OutraDespesa } from '@/types';
 
 interface CalculationResult {
   fuelCost: number;
@@ -41,7 +38,8 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
     kmDriven: '',
     gasPrice: '',
     fuelConsumption: '',
-    dailyIncome: ''
+    dailyIncome: '',
+    outrasDespesas: ''
   });
 
   const [fuelData, setFuelData] = useState({
@@ -54,19 +52,9 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
 
   const [uberResults, setUberResults] = useState<CalculationResult | null>(null);
   const [fuelComparisons, setFuelComparisons] = useState<FuelComparison[]>([]);
-  const [outrasDespesas, setOutrasDespesas] = useState<OutraDespesa[]>([]);
 
   // Estado para controlar o popover do calendário
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
-
-  useEffect(() => {
-    loadDespesas();
-  }, []);
-
-  const loadDespesas = async () => {
-    const despesas = await OutrasDespesasService.obterDespesas();
-    setOutrasDespesas(despesas);
-  };
 
   const handleUberInputChange = (field: keyof typeof uberData, value: Date | string) => {
     if (field === 'data') {
@@ -96,6 +84,7 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
     const gasPrice = parseFloat(uberData.gasPrice);
     const consumption = parseFloat(uberData.fuelConsumption);
     const dailyIncome = parseFloat(uberData.dailyIncome);
+    const outrasDespesas = parseFloat(uberData.outrasDespesas) || 0;
 
     if (!uberData.data || isNaN(km) || isNaN(gasPrice) || isNaN(consumption) || isNaN(dailyIncome)) {
       alert('Preencha todos os campos com valores válidos, incluindo a data');
@@ -104,7 +93,8 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
 
     const fuelCost = (km / consumption) * gasPrice;
     const totalIncome = dailyIncome;
-    const netProfit = totalIncome - fuelCost;
+    const totalExpenses = fuelCost + outrasDespesas;
+    const netProfit = totalIncome - totalExpenses;
     const profitPerKm = netProfit / km;
 
     const results: CalculationResult = {
@@ -125,9 +115,9 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
         valorGanho: dailyIncome,
         gastosCombustivel: fuelCost,
         lucroLiquido: netProfit,
-        lucroKm: profitPerKm
+        lucroKm: profitPerKm,
+        outrasDespesas: outrasDespesas
       });
-      // Chamar a função de atualização de dados do dashboard, se fornecida
       if (onDataUpdate) {
         onDataUpdate();
       }
@@ -176,7 +166,8 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
       kmDriven: '',
       gasPrice: '',
       fuelConsumption: '',
-      dailyIncome: ''
+      dailyIncome: '',
+      outrasDespesas: ''
     });
     setUberResults(null);
     setIsFormDisabled(false);
@@ -331,15 +322,15 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                     </div>
                   </div>
 
-                  {/* Seção 3: Ganhos */}
+                  {/* Seção 3: Ganhos e Despesas */}
                   <div className="space-y-6 md:col-span-2 xl:col-span-1 mb-8">
                     <h4 className="font-semibold text-foreground flex items-center gap-3 pb-4 border-b border-border/50 mb-4">
                       <div className="p-1.5 rounded-md bg-primary/10">
                         <DollarSign className="h-4 w-4 text-primary" />
                       </div>
-                      Ganhos
+                      Ganhos e Despesas
                     </h4>
-                    
+
                     <div className="space-y-4">
                       <div className="space-y-3 flex flex-col">
                         <Label htmlFor="dailyIncome" className="text-sm font-medium">Valor Total no Dia</Label>
@@ -357,6 +348,25 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                         </div>
                         <p className="text-xs text-muted-foreground/80 bg-muted/30 p-3 rounded-md">
                           💡 Valor total recebido durante o dia de trabalho
+                        </p>
+                      </div>
+
+                      <div className="space-y-3 flex flex-col">
+                        <Label htmlFor="outrasDespesas" className="text-sm font-medium">Outras Despesas</Label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                          <Input
+                            id="outrasDespesas"
+                            type="text"
+                            placeholder="0.00"
+                            value={uberData.outrasDespesas}
+                            disabled={isFormDisabled}
+                            onChange={(e) => handleUberInputChange('outrasDespesas', e.target.value)}
+                            className="h-12 pl-10 pr-4 border-2 transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground/80 bg-muted/30 p-3 rounded-md">
+                          💡 Pedágio, estacionamento, manutenção, etc.
                         </p>
                       </div>
                     </div>
@@ -442,17 +452,6 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
             </div>
           </CardContent>
         )}
-        
-        <OutrasDespesas 
-          despesas={outrasDespesas} 
-          onDespesasChange={() => {
-            loadDespesas();
-            if (onDataUpdate) {
-              onDataUpdate();
-            }
-          }}
-          isFormDisabled={false}
-        />
         </TabsContent>
 
         <TabsContent value="fuel">

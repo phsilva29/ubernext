@@ -5,7 +5,7 @@ import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import React, { useState, useEffect, useRef } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2, DollarSign, TrendingUp, TrendingDown, Car, Fuel, Route } from "lucide-react";
+import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2, DollarSign, TrendingUp, TrendingDown, Car, Fuel, Route, Receipt } from "lucide-react";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import ViagemService from "@/services/ViagemService";
@@ -259,7 +259,7 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Cards de resumo responsivos */}
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-4 sm:grid-cols-2 grid-cols-1">
+      <div className="grid gap-3 sm:gap-4 xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 grid-cols-1">
         {/* Cards de Resumo dinâmicos */}
         {/* Wrapper animado para cada card de resumo */}
         <div key={periodoSelecionado ? periodoSelecionado.mes + '-ganhos' : 'ganhos'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
@@ -338,6 +338,26 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
             <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
               <Route className="h-3 w-3" />
               {periodoSelecionado ? periodoSelecionado.kmRodados.toFixed(0) : '0'} km percorridos
+            </p>
+          </CardContent>
+        </Card>
+        </div>
+
+        <div key="outras-despesas" className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
+        <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-orange-400/40">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-orange-600/5"></div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Outras Despesas</CardTitle>
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+              <Receipt className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-orange-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+              R$ {(dadosDashboard?.totalOutrasDespesas || 0).toFixed(2)}
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Pedágio, estacionamento, etc.
             </p>
           </CardContent>
         </Card>
