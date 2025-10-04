@@ -1,15 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Line, LineChart, Legend, PieChart, Pie, Cell } from "recharts";
-import { DadosDashboard, Viagem, OutraDespesa } from "@/types";
+import { DadosDashboard, Viagem, Despesa } from "@/types";
 import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import React, { useState, useEffect, useRef } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2, DollarSign, TrendingUp, TrendingDown, Car, Fuel, Route, Receipt, Plus } from "lucide-react";
+import { CalendarDays, Calendar as CalendarIcon, Clock, Pencil, Trash2, DollarSign, TrendingUp, TrendingDown, Car, Fuel, Route, Receipt } from "lucide-react";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import ViagemService from "@/services/ViagemService";
-import OutrasDespesasService from "@/services/OutrasDespesasService";
+import DespesaService from "@/services/DespesaService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,8 @@ export interface DashboardProps {
 interface DadosGrafico {
   mes: string;
   ganhos: number;
+  gastosCombustivel: number;
+  despesas: number;
   gastos: number;
   lucro: number;
   kmRodados: number;
@@ -106,24 +108,22 @@ function getPeriodoSelecionado(arr: DadosGrafico[], periodo: PeriodoVisualizacao
     const chave = `${dia}/${mes}`;
     return arr.find(d => d.mes.startsWith(chave)) || null;
   } else if (periodo === 'semanal') {
-    // Busca semana que contém hoje
+    const inicioSemanaAtual = startOfWeek(hoje, { weekStartsOn: 1 }); // Segunda-feira
+    const fimSemanaAtual = addDays(inicioSemanaAtual, 6);
+    
     return arr.find(d => {
       try {
         const [inicio, fim] = d.mes.split(' - ');
         const partesIni = inicio.split('/');
         const partesFim = fim.split('/');
         
-        // Se não tiver ano, usa o ano atual
-        let anoIni = hoje.getFullYear();
-        let anoFim = hoje.getFullYear();
-        
         const diaIni = parseInt(partesIni[0]);
         const mesIni = parseInt(partesIni[1]);
-        if (partesIni.length === 3) anoIni = parseInt(partesIni[2]);
+        const anoIni = parseInt(partesIni[2]);
         
         const diaFim = parseInt(partesFim[0]);
         const mesFim = parseInt(partesFim[1]);
-        if (partesFim.length === 3) anoFim = parseInt(partesFim[2]);
+        const anoFim = parseInt(partesFim[2]);
         
         const dataIni = new Date(anoIni, mesIni - 1, diaIni);
         const dataFim = new Date(anoFim, mesFim - 1, diaFim);
@@ -147,9 +147,10 @@ function getPeriodoSelecionado(arr: DadosGrafico[], periodo: PeriodoVisualizacao
 
 export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProps) {
   // FUNÇÃO HELPER DEVE VIR ANTES DOS HOOKS
-  const agruparDadosPorPeriodo = (viagens: Viagem[], periodo: PeriodoVisualizacao): DadosGrafico[] => {
+  const agruparDadosPorPeriodo = (viagens: Viagem[], despesas: Despesa[], periodo: PeriodoVisualizacao): DadosGrafico[] => {
     const dadosAgrupados = new Map<string, DadosGrafico>();
 
+      // Processar viagens
     viagens.forEach((viagem) => {
       let chave: string;
       const data = new Date(viagem.data);
@@ -160,7 +161,46 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
           break;
         }
         case 'semanal': {
-          const inicioSemana = startOfWeek(data, { locale: ptBR });
+          const inicioSemana = startOfWeek(data, { weekStartsOn: 1 }); // Segunda-feira
+          const fimSemana = addDays(inicioSemana, 6);
+          chave = `${format(inicioSemana, 'dd/MM/yyyy')} - ${format(fimSemana, 'dd/MM/yyyy')}`;
+          break;
+        }
+        case 'mensal':
+        default: {
+          chave = format(data, 'MMMM/yyyy', { locale: ptBR });
+          break;
+        }
+      }      const dadosAtuais = dadosAgrupados.get(chave) || {
+        mes: chave,
+        ganhos: 0,
+        gastosCombustivel: 0,
+        despesas: 0,
+        gastos: 0,
+        lucro: 0,
+        kmRodados: 0
+      };
+
+      dadosAgrupados.set(chave, {
+        ...dadosAtuais,
+        ganhos: dadosAtuais.ganhos + viagem.valorGanho,
+        gastosCombustivel: dadosAtuais.gastosCombustivel + (viagem.gastosCombustivel || 0),
+        kmRodados: dadosAtuais.kmRodados + viagem.kmRodados
+      });
+    });
+
+    // Processar despesas
+    despesas.forEach((despesa) => {
+      let chave: string;
+      const data = new Date(despesa.data);
+
+      switch (periodo) {
+        case 'diario': {
+          chave = format(data, 'dd/MM', { locale: ptBR });
+          break;
+        }
+        case 'semanal': {
+          const inicioSemana = startOfWeek(data, { weekStartsOn: 1 }); // Segunda-feira
           const fimSemana = addDays(inicioSemana, 6);
           chave = `${format(inicioSemana, 'dd/MM/yyyy')} - ${format(fimSemana, 'dd/MM/yyyy')}`;
           break;
@@ -175,6 +215,8 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
       const dadosAtuais = dadosAgrupados.get(chave) || {
         mes: chave,
         ganhos: 0,
+        gastosCombustivel: 0,
+        despesas: 0,
         gastos: 0,
         lucro: 0,
         kmRodados: 0
@@ -182,14 +224,16 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
 
       dadosAgrupados.set(chave, {
         ...dadosAtuais,
-        ganhos: dadosAtuais.ganhos + viagem.valorGanho,
-        gastos: dadosAtuais.gastos + (viagem.gastosCombustivel || 0),
-        lucro: dadosAtuais.lucro + (viagem.lucroLiquido || 0),
-        kmRodados: dadosAtuais.kmRodados + viagem.kmRodados
+        despesas: dadosAtuais.despesas + despesa.valor
       });
     });
 
-    return Array.from(dadosAgrupados.values());
+    // Calcular totais
+    return Array.from(dadosAgrupados.values()).map(dados => ({
+      ...dados,
+      gastos: dados.gastosCombustivel + dados.despesas,
+      lucro: dados.ganhos - (dados.gastosCombustivel + dados.despesas)
+    }));
   };
 
   // TODOS OS HOOKS DEVEM VIR PRIMEIRO - ANTES DE QUALQUER EARLY RETURN
@@ -198,17 +242,29 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
   const [dialogOpen, setDialogOpen] = useState(false);
   const [periodoVisualizacao, setPeriodoVisualizacao] = useState<PeriodoVisualizacao>('mensal');
   const [dadosFiltrados, setDadosFiltrados] = useState<DadosGrafico[]>([]);
-  const [despesas, setDespesas] = useState<OutraDespesa[]>([]);
-  const [despesasDialogOpen, setDespesasDialogOpen] = useState(false);
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
 
-  // Load expenses
+  // Load despesas
   useEffect(() => {
     const carregarDespesas = async () => {
-      const despesasCarregadas = await OutrasDespesasService.obterDespesas();
+      const despesasCarregadas = await DespesaService.obterDespesas();
       setDespesas(despesasCarregadas);
     };
     carregarDespesas();
   }, []);
+
+  // Função para recarregar despesas
+  const recarregarDespesas = async () => {
+    const despesasCarregadas = await DespesaService.obterDespesas();
+    setDespesas(despesasCarregadas);
+  };
+
+  // Recarregar despesas quando onDataUpdate é chamado
+  useEffect(() => {
+    if (dadosDashboard) {
+      recarregarDespesas();
+    }
+  }, [dadosDashboard]); // Reagir quando dadosDashboard muda
 
   useEffect(() => {
     setIsLoading(!dadosDashboard);
@@ -217,10 +273,10 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
   // Segundo useEffect que foi movido para cá
   useEffect(() => {
     if (dadosDashboard?.viagens) {
-      const dadosAgrupados = agruparDadosPorPeriodo(dadosDashboard.viagens, periodoVisualizacao);
+      const dadosAgrupados = agruparDadosPorPeriodo(dadosDashboard.viagens, despesas, periodoVisualizacao);
       setDadosFiltrados(dadosAgrupados);
     }
-  }, [dadosDashboard?.viagens, periodoVisualizacao]);
+  }, [dadosDashboard?.viagens, despesas, periodoVisualizacao]);
 
   // AGORA PODEMOS TER EARLY RETURNS DEPOIS DE TODOS OS HOOKS
   if (isLoading) {
@@ -233,22 +289,6 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
 
   // Nunca retorne antes dos cards de resumo. Se não houver dados, mostre zero animado.
   const periodoSelecionado = getPeriodoSelecionado(dadosFiltrados, periodoVisualizacao);
-
-  // Calculate total expenses (non-trip specific)
-  const totalDespesasGerais = despesas
-    .filter(d => !d.tripId)
-    .reduce((acc, d) => acc + d.amount, 0);
-
-  // Calculate adjusted net profit (earnings - fuel costs - general expenses)
-  const lucroAjustado = (periodoSelecionado ? periodoSelecionado.lucro : 0) - totalDespesasGerais;
-
-  const handleRecarregarDespesas = async () => {
-    const despesasAtualizadas = await OutrasDespesasService.obterDespesas();
-    setDespesas(despesasAtualizadas);
-    if (onDataUpdate) {
-      onDataUpdate();
-    }
-  };
 
 
   const handleEditar = (viagem: Viagem) => {
@@ -291,16 +331,16 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
         {/* Cards de Resumo dinâmicos */}
         {/* Wrapper animado para cada card de resumo */}
         <div key={periodoSelecionado ? periodoSelecionado.mes + '-ganhos' : 'ganhos'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
-          <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-green-400/40">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/5"></div>
+          <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-blue-400/40">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Ganhos</CardTitle>
-              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-green-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
+              <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
                 R$ {(periodoSelecionado ? periodoSelecionado.ganhos : 0).toFixed(2)}
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
@@ -315,36 +355,17 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
         <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-red-400/40">
           <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/5"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Gastos</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Gastos Combustível</CardTitle>
             <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-red-500/20 flex items-center justify-center">
               <Fuel className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
             <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-red-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
-              R$ {(periodoSelecionado ? periodoSelecionado.gastos : 0).toFixed(2)}
+              R$ {(periodoSelecionado ? periodoSelecionado.gastosCombustivel : 0).toFixed(2)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
               Combustível consumido
-            </p>
-          </CardContent>
-        </Card>
-        </div>
-
-        <div key={periodoSelecionado ? periodoSelecionado.mes + '-lucro' : 'lucro'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
-        <Card className="transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-blue-400/40">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
-            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-muted/20 flex items-center justify-center">
-              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
-              R$ {lucroAjustado.toFixed(2)}
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {totalDespesasGerais > 0 ? `Após R$ ${totalDespesasGerais.toFixed(2)} em despesas` : 'Sem despesas extras'}
             </p>
           </CardContent>
         </Card>
@@ -354,46 +375,48 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
         <Card className="relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 border-orange-400/40">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-orange-600/5"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Outras Despesas</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Despesas do Período</CardTitle>
             <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
               <Receipt className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
             <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-orange-600 mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105">
-              R$ {totalDespesasGerais.toFixed(2)}
+              R$ {(periodoSelecionado ? periodoSelecionado.despesas : 0).toFixed(2)}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDespesasDialogOpen(true)}
-              className="text-xs sm:text-sm text-muted-foreground hover:text-orange-600 p-0 h-auto"
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Gerenciar despesas
-            </Button>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              {periodoSelecionado ? 'Despesas do período' : 'Nenhuma despesa no período'}
+            </p>
           </CardContent>
         </Card>
         </div>
+
+        <div key={periodoSelecionado ? periodoSelecionado.mes + '-lucro' : 'lucro'} className="transition-all duration-500 ease-in-out opacity-100 translate-y-0">
+        {(() => {
+          const lucro = periodoSelecionado ? periodoSelecionado.lucro : 0;
+          const isNegative = lucro < 0;
+          return (
+            <Card className={`transition-all duration-500 ease-in-out transform hover:scale-105 hover:shadow-xl border-2 ${isNegative ? 'border-red-400/40' : 'border-green-400/40'}`}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Lucro Líquido</CardTitle>
+                <div className={`h-6 w-6 sm:h-8 sm:w-8 rounded-lg ${isNegative ? 'bg-red-500/20' : 'bg-green-500/20'} flex items-center justify-center`}>
+                  <DollarSign className={`h-3 w-3 sm:h-4 sm:w-4 ${isNegative ? 'text-red-600' : 'text-green-600'}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-lg sm:text-2xl lg:text-3xl font-bold ${isNegative ? 'text-red-600' : 'text-green-600'} mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-105`}>
+                  R$ {lucro.toFixed(2)}
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Lucro líquido da operação
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
+        </div>
       </div>
 
-      {/* Expenses Dialog */}
-      <Dialog open={despesasDialogOpen} onOpenChange={setDespesasDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-orange-500" />
-              Gerenciar Outras Despesas
-            </DialogTitle>
-          </DialogHeader>
-          <ExpensesManager 
-            despesas={despesas.filter(d => !d.tripId)} 
-            onDespesasChange={handleRecarregarDespesas}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Gráficos */}
       <Card className="w-full transition-all duration-500 animate-in fade-in-0 slide-in-from-bottom-4">
         <CardHeader className="flex flex-col space-y-3 sm:space-y-4 pb-4 sm:pb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -432,18 +455,21 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
             <PieChart>
               <Pie
                 data={(() => {
-                  const periodo = getPeriodoSelecionado(dadosDashboard?.viagens ? agruparDadosPorPeriodo(dadosDashboard.viagens, periodoVisualizacao) : [], periodoVisualizacao);
+                  const periodo = getPeriodoSelecionado(dadosDashboard?.viagens ? agruparDadosPorPeriodo(dadosDashboard.viagens, despesas, periodoVisualizacao) : [], periodoVisualizacao);
                   if (!periodo) {
                     return [
-                      { name: 'Ganhos', value: 0, color: '#22c55e' },
-                      { name: 'Gastos', value: 0, color: '#ef4444' },
-                      { name: 'Lucro', value: 0, color: '#3b82f6' }
+                      { name: 'Ganhos', value: 0, color: '#3b82f6' },
+                      { name: 'Combustível', value: 0, color: '#ef4444' },
+                      { name: 'Despesas', value: 0, color: '#f97316' },
+                      { name: 'Lucro', value: 0, color: '#22c55e' }
                     ];
                   }
+                  const lucroColor = periodo.lucro < 0 ? '#ef4444' : '#22c55e';
                   return [
-                    { name: 'Ganhos', value: periodo.ganhos, color: '#22c55e' },
-                    { name: 'Gastos', value: periodo.gastos, color: '#ef4444' },
-                    { name: 'Lucro', value: periodo.lucro, color: '#3b82f6' }
+                    { name: 'Ganhos', value: periodo.ganhos, color: '#3b82f6' },
+                    { name: 'Combustível', value: periodo.gastosCombustivel, color: '#ef4444' },
+                    { name: 'Despesas', value: periodo.despesas, color: '#f97316' },
+                    { name: 'Lucro', value: Math.abs(periodo.lucro), color: lucroColor }
                   ];
                 })()}
                 cx="50%"
@@ -454,13 +480,18 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
                 dataKey="value"
                 stroke="none"
               >
-                {[
-                  { name: 'Ganhos', color: '#22c55e' },
-                  { name: 'Gastos', color: '#ef4444' },
-                  { name: 'Lucro', color: '#3b82f6' }
-                ].map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                ))}
+                {(() => {
+                  const periodo = getPeriodoSelecionado(dadosDashboard?.viagens ? agruparDadosPorPeriodo(dadosDashboard.viagens, despesas, periodoVisualizacao) : [], periodoVisualizacao);
+                  const lucroColor = periodo && periodo.lucro < 0 ? '#ef4444' : '#22c55e';
+                  return [
+                    { name: 'Ganhos', color: '#3b82f6' },
+                    { name: 'Combustível', color: '#ef4444' },
+                    { name: 'Despesas', color: '#f97316' },
+                    { name: 'Lucro', color: lucroColor }
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                  ));
+                })()}
               </Pie>
               <Tooltip
                 wrapperStyle={{ zIndex: 1000 }}
@@ -579,18 +610,23 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-                  <div className="bg-green-500/5 p-2 sm:p-3 rounded-lg border border-green-500/20">
-                    <span className="text-xs text-green-600 font-medium">Ganhos</span>
-                    <p className="text-sm sm:text-base md:text-lg font-bold text-green-600 truncate">R$ {viagem.valorGanho.toFixed(2)}</p>
+                  <div className="bg-blue-500/5 p-2 sm:p-3 rounded-lg border border-blue-500/20">
+                    <span className="text-xs text-blue-600 font-medium">Ganhos</span>
+                    <p className="text-sm sm:text-base md:text-lg font-bold text-blue-600 truncate">R$ {viagem.valorGanho.toFixed(2)}</p>
                   </div>
                   <div className="bg-red-500/5 p-2 sm:p-3 rounded-lg border border-red-500/20">
                     <span className="text-xs text-red-600 font-medium">Gastos</span>
                     <p className="text-sm sm:text-base md:text-lg font-bold text-red-600 truncate">R$ {viagem.gastosCombustivel?.toFixed(2)}</p>
                   </div>
-                  <div className="bg-blue-500/5 p-2 sm:p-3 rounded-lg border border-blue-500/20">
-                    <span className="text-xs text-blue-600 font-medium">Lucro</span>
-                    <p className="text-sm sm:text-base md:text-lg font-bold text-blue-600 truncate">R$ {viagem.lucroLiquido?.toFixed(2)}</p>
-                  </div>
+                  {(() => {
+                    const isNegative = (viagem.lucroLiquido || 0) < 0;
+                    return (
+                      <div className={`p-2 sm:p-3 rounded-lg border ${isNegative ? 'bg-red-500/5 border-red-500/20' : 'bg-green-500/5 border-green-500/20'}`}>
+                        <span className={`text-xs font-medium ${isNegative ? 'text-red-600' : 'text-green-600'}`}>Lucro</span>
+                        <p className={`text-sm sm:text-base md:text-lg font-bold truncate ${isNegative ? 'text-red-600' : 'text-green-600'}`}>R$ {viagem.lucroLiquido?.toFixed(2)}</p>
+                      </div>
+                    );
+                  })()}
                   <div className="bg-purple-500/5 p-2 sm:p-3 rounded-lg border border-purple-500/20">
                      <span className="text-xs text-purple-600 font-medium hidden sm:inline">Valor do Combustível</span>
                     <span className="text-xs text-purple-600 font-medium sm:hidden">Combustível</span>
@@ -598,12 +634,6 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
                   </div>
                 </div>
                 
-                {/* Trip Expenses */}
-                <TripExpenses 
-                  tripId={viagem.id!} 
-                  despesas={despesas.filter(d => d.tripId === viagem.id)}
-                  onDespesasChange={handleRecarregarDespesas}
-                />
               </Card>
             ))}
           </div>
@@ -743,395 +773,5 @@ const EditarViagemDialog = ({ isOpen, onClose, onSave, viagem, onDataUpdate }: V
         </form>
       </DialogContent>
     </Dialog>
-  );
-};
-
-// Expenses Manager Component
-interface ExpensesManagerProps {
-  despesas: OutraDespesa[];
-  onDespesasChange: () => void;
-}
-
-const ExpensesManager = ({ despesas, onDespesasChange }: ExpensesManagerProps) => {
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [category, setCategory] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleAddExpense = async () => {
-    if (!description.trim() || !amount) {
-      alert('Preencha a descrição e o valor da despesa');
-      return;
-    }
-
-    const amountValue = parseFloat(amount);
-    if (isNaN(amountValue) || amountValue <= 0) {
-      alert('Insira um valor válido para a despesa');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await OutrasDespesasService.salvarDespesa({
-        description: description.trim(),
-        amount: amountValue,
-        date: date,
-        category: category.trim() || undefined
-      });
-
-      setDescription('');
-      setAmount('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setCategory('');
-      onDespesasChange();
-    } catch (error) {
-      console.error('Erro ao adicionar despesa:', error);
-      alert('Erro ao adicionar despesa');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    if (!confirm('Deseja realmente excluir esta despesa?')) return;
-
-    setIsLoading(true);
-    try {
-      await OutrasDespesasService.excluirDespesa(id);
-      onDespesasChange();
-    } catch (error) {
-      console.error('Erro ao excluir despesa:', error);
-      alert('Erro ao excluir despesa');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const totalDespesas = despesas.reduce((acc, despesa) => acc + despesa.amount, 0);
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="expense-description">Descrição</Label>
-          <Input
-            id="expense-description"
-            type="text"
-            placeholder="Ex: Pedágio, Estacionamento, Manutenção..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="expense-amount">Valor (R$)</Label>
-          <Input
-            id="expense-amount"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="expense-date">Data</Label>
-          <Input
-            id="expense-date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="expense-category">Categoria (opcional)</Label>
-          <Input
-            id="expense-category"
-            type="text"
-            placeholder="Ex: Transporte, Manutenção..."
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            disabled={isLoading}
-          />
-        </div>
-      </div>
-
-      <Button
-        onClick={handleAddExpense}
-        disabled={isLoading}
-        className="w-full bg-orange-500 hover:bg-orange-600"
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        Adicionar Despesa
-      </Button>
-
-      {despesas.length > 0 && (
-        <div className="space-y-3 mt-6">
-          <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Despesas Cadastradas
-          </h4>
-          <div className="space-y-2">
-            {despesas.map((despesa) => (
-              <div
-                key={despesa.id}
-                className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:border-orange-500/50 transition-all"
-              >
-                <div className="flex items-center gap-3 flex-1">
-                  <Receipt className="h-5 w-5 text-red-500" />
-                  <div>
-                    <p className="font-medium">{despesa.description}</p>
-                    <div className="flex gap-2 text-xs text-muted-foreground">
-                      {despesa.date && <span>{new Date(despesa.date).toLocaleDateString('pt-BR')}</span>}
-                      {despesa.category && <span>• {despesa.category}</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-lg font-bold text-red-500 whitespace-nowrap">
-                    - R$ {despesa.amount.toFixed(2)}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteExpense(despesa.id!)}
-                    disabled={isLoading}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-4 border-t">
-            <div className="flex items-center justify-between p-4 bg-orange-500/10 rounded-lg border-2 border-orange-500/30">
-              <span className="font-semibold">Total de Despesas:</span>
-              <span className="text-xl font-bold text-orange-500">
-                R$ {totalDespesas.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {despesas.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <Receipt className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>Nenhuma despesa registrada</p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Trip Expenses Component
-interface TripExpensesProps {
-  tripId: string;
-  despesas: OutraDespesa[];
-  onDespesasChange: () => void;
-}
-
-const TripExpenses = ({ tripId, despesas, onDespesasChange }: TripExpensesProps) => {
-  const [showExpenses, setShowExpenses] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  if (despesas.length === 0 && !showExpenses) {
-    return (
-      <div className="mt-3 pt-3 border-t">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setDialogOpen(true)}
-          className="text-xs text-muted-foreground hover:text-orange-600"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Adicionar despesa da viagem
-        </Button>
-
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Despesas da Viagem</DialogTitle>
-            </DialogHeader>
-            <TripExpenseForm 
-              tripId={tripId} 
-              onSuccess={() => {
-                onDespesasChange();
-                setDialogOpen(false);
-              }} 
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
-  }
-
-  const totalDespesasViagem = despesas.reduce((acc, d) => acc + d.amount, 0);
-
-  return (
-    <div className="mt-3 pt-3 border-t space-y-2">
-      <div className="flex items-center justify-between">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-          <Receipt className="h-3 w-3" />
-          Despesas da Viagem
-        </h4>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowExpenses(!showExpenses)}
-          className="text-xs h-6"
-        >
-          {showExpenses ? 'Ocultar' : 'Ver'} ({despesas.length})
-        </Button>
-      </div>
-
-      {showExpenses && (
-        <div className="space-y-2">
-          {despesas.map((despesa) => (
-            <div
-              key={despesa.id}
-              className="flex items-center justify-between p-2 bg-red-500/5 rounded border border-red-500/20 text-xs"
-            >
-              <div className="flex-1">
-                <p className="font-medium">{despesa.description}</p>
-                {despesa.category && <p className="text-muted-foreground">{despesa.category}</p>}
-              </div>
-              <span className="font-bold text-red-500 whitespace-nowrap">
-                - R$ {despesa.amount.toFixed(2)}
-              </span>
-            </div>
-          ))}
-          <div className="flex items-center justify-between p-2 bg-orange-500/10 rounded border border-orange-500/30 font-semibold text-xs">
-            <span>Total:</span>
-            <span className="text-orange-600">R$ {totalDespesasViagem.toFixed(2)}</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDialogOpen(true)}
-            className="w-full text-xs"
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Adicionar mais
-          </Button>
-
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Despesas da Viagem</DialogTitle>
-              </DialogHeader>
-              <TripExpenseForm 
-                tripId={tripId} 
-                onSuccess={() => {
-                  onDespesasChange();
-                  setDialogOpen(false);
-                }} 
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Trip Expense Form Component
-interface TripExpenseFormProps {
-  tripId: string;
-  onSuccess: () => void;
-}
-
-const TripExpenseForm = ({ tripId, onSuccess }: TripExpenseFormProps) => {
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!description.trim() || !amount) {
-      alert('Preencha a descrição e o valor da despesa');
-      return;
-    }
-
-    const amountValue = parseFloat(amount);
-    if (isNaN(amountValue) || amountValue <= 0) {
-      alert('Insira um valor válido para a despesa');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await OutrasDespesasService.salvarDespesa({
-        description: description.trim(),
-        amount: amountValue,
-        tripId: tripId,
-        category: category.trim() || undefined
-      });
-
-      setDescription('');
-      setAmount('');
-      setCategory('');
-      onSuccess();
-    } catch (error) {
-      console.error('Erro ao adicionar despesa:', error);
-      alert('Erro ao adicionar despesa');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="trip-expense-description">Descrição</Label>
-        <Input
-          id="trip-expense-description"
-          type="text"
-          placeholder="Ex: Pedágio, Estacionamento..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          disabled={isLoading}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="trip-expense-amount">Valor (R$)</Label>
-        <Input
-          id="trip-expense-amount"
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          disabled={isLoading}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="trip-expense-category">Categoria (opcional)</Label>
-        <Input
-          id="trip-expense-category"
-          type="text"
-          placeholder="Ex: Transporte, Alimentação..."
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          disabled={isLoading}
-        />
-      </div>
-
-      <Button type="submit" disabled={isLoading} className="w-full bg-orange-500 hover:bg-orange-600">
-        <Plus className="h-4 w-4 mr-2" />
-        Adicionar Despesa
-      </Button>
-    </form>
   );
 };

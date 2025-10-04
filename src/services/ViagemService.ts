@@ -1,6 +1,6 @@
 import { Viagem, DadosDashboard } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import OutrasDespesasService from './OutrasDespesasService';
+import DespesaService from './DespesaService';
 
 class ViagemService {
   // Salvar uma nova viagem
@@ -126,11 +126,11 @@ class ViagemService {
   static async obterDadosDashboard(): Promise<DadosDashboard> {
     try {
       const viagens = await this.obterViagens();
-      const outrasDespesas = await OutrasDespesasService.obterDespesas();
-      const totalOutrasDespesas = outrasDespesas.reduce((acc, d) => acc + d.amount, 0);
+      const despesas = await DespesaService.obterDespesas();
       
       const totalGastosCombustivel = viagens.reduce((acc, v) => acc + (v.gastosCombustivel || 0), 0);
-      const totalGastos = totalGastosCombustivel + totalOutrasDespesas;
+      const totalDespesas = despesas.reduce((acc, d) => acc + d.valor, 0);
+      const totalGastos = totalGastosCombustivel + totalDespesas;
       const totalGanhos = viagens.reduce((acc, v) => acc + v.valorGanho, 0);
       const lucroTotal = totalGanhos - totalGastos;
       

@@ -46,44 +46,47 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center py-4 sm:py-6 lg:py-8 px-3 sm:px-4 md:px-6 lg:px-8">
-      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 md:py-6 lg:py-8 w-full">
-        {/* Header responsivo */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
-          <div className="text-center sm:text-left flex-1 w-full">
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-1 sm:mb-2">
-              Calculadora Uber
-            </h1>
-            <p className="text-muted-foreground text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed">
-              Calcule seus ganhos e gastos com combustível de forma prática
-            </p>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Container principal com padding responsivo */}
+      <div className="flex-1 px-2 xs:px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-2 xs:py-4 sm:py-6 md:py-8">
+        <div className="max-w-7xl mx-auto w-full">
+          {/* Header responsivo */}
+          <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3 xs:gap-4 sm:gap-6 mb-4 xs:mb-6 sm:mb-8 lg:mb-10">
+            <div className="text-center xs:text-left flex-1 w-full xs:w-auto">
+              <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground mb-1 xs:mb-2 leading-tight">
+                Calculadora Uber
+              </h1>
+              <p className="text-muted-foreground text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
+                Calcule seus ganhos e gastos com combustível de forma prática
+              </p>
+            </div>
+            
+            <div className="flex flex-col xs:flex-row items-center gap-2 xs:gap-3 sm:gap-4 w-full xs:w-auto">
+              <div className="flex items-center gap-1.5 xs:gap-2 text-xs xs:text-sm sm:text-base text-muted-foreground">
+                <User className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                <span className="truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px] md:max-w-[250px]">{user.email}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="flex items-center gap-1.5 xs:gap-2 w-full xs:w-auto h-8 xs:h-9 sm:h-10 text-xs xs:text-sm sm:text-base px-3 xs:px-4 sm:px-6"
+              >
+                <LogOut className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                <span className="xs:inline">Sair</span>
+              </Button>
+            </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 lg:gap-4 w-full sm:w-auto">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-              <User className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="truncate max-w-[150px] sm:max-w-[200px] md:max-w-[250px]">{user.email}</span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={signOut}
-              className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm"
-            >
-              <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
+          {/* Calculadora com espaçamento responsivo */}
+          <div className="w-full mb-4 xs:mb-6 sm:mb-8 lg:mb-10">
+            <UberCalculator onDataUpdate={carregarDadosDashboard} />
           </div>
-        </div>
-        
-        {/* Calculadora */}
-        <div className="w-full max-w-5xl mx-auto mb-4 sm:mb-6 lg:mb-8">
-          <UberCalculator onDataUpdate={carregarDadosDashboard} />
-        </div>
-        
-        {/* Dashboard */}
-        <div className="w-full">
-          <Dashboard dados={dashboardData || undefined} onDataUpdate={carregarDadosDashboard} />
+          
+          {/* Dashboard */}
+          <div className="w-full">
+            <Dashboard dados={dashboardData || undefined} onDataUpdate={carregarDadosDashboard} />
+          </div>
         </div>
       </div>
     </div>

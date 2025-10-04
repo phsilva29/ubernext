@@ -10,13 +10,14 @@ export interface Viagem {
   lucroKm?: number;
 }
 
-export interface OutraDespesa {
+export interface Despesa {
   id?: string;
-  tripId?: string;
-  description: string;
-  amount: number;
-  date?: string;
-  category?: string;
+  categoria: string;
+  descricao: string;
+  valor: number;
+  data: Date;
+  origem: string;
+  observacoes?: string;
   created_at?: string;
 }
 

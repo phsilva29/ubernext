@@ -123,3 +123,135 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Classes utilitárias personalizadas para responsividade */
+@layer utilities {
+  /* Espaçamento responsivo */
+  .spacing-responsive {
+    @apply space-y-2 xs:space-y-3 sm:space-y-4 md:space-y-6;
+  }
+  
+  /* Padding responsivo */
+  .padding-responsive {
+    @apply p-2 xs:p-3 sm:p-4 md:p-6 lg:p-8;
+  }
+  
+  /* Margens responsivas */
+  .margin-responsive {
+    @apply m-2 xs:m-3 sm:m-4 md:m-6 lg:m-8;
+  }
+  
+  /* Texto responsivo */
+  .text-responsive-xs {
+    @apply text-xs xs:text-sm sm:text-base;
+  }
+  
+  .text-responsive-sm {
+    @apply text-sm xs:text-base sm:text-lg;
+  }
+  
+  .text-responsive-base {
+    @apply text-base xs:text-lg sm:text-xl md:text-2xl;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl;
+  }
+  
+  /* Alturas responsivas */
+  .height-responsive-input {
+    @apply h-8 xs:h-9 sm:h-10 md:h-12;
+  }
+  
+  .height-responsive-button {
+    @apply h-8 xs:h-9 sm:h-10;
+  }
+  
+  /* Grid responsivo */
+  .grid-responsive-2 {
+    @apply grid grid-cols-1 xs:grid-cols-2;
+  }
+  
+  .grid-responsive-3 {
+    @apply grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3;
+  }
+  
+  .grid-responsive-4 {
+    @apply grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4;
+  }
+  
+  /* Gaps responsivos */
+  .gap-responsive {
+    @apply gap-2 xs:gap-3 sm:gap-4 md:gap-6;
+  }
+  
+  /* Flexbox responsivo */
+  .flex-responsive {
+    @apply flex flex-col xs:flex-row;
+  }
+  
+  /* Overflow scroll em mobile */
+  .scroll-mobile {
+    @apply overflow-x-auto xs:overflow-x-visible;
+  }
+  
+  /* Esconder em mobile */
+  .hidden-mobile {
+    @apply hidden xs:block;
+  }
+  
+  /* Mostrar apenas em mobile */
+  .show-mobile {
+    @apply block xs:hidden;
+  }
+  
+  /* Truncate responsivo */
+  .truncate-responsive {
+    @apply truncate max-w-[100px] xs:max-w-[150px] sm:max-w-[200px] md:max-w-[300px];
+  }
+  
+  /* Container responsivo */
+  .container-responsive {
+    @apply container mx-auto px-2 xs:px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16;
+  }
+  
+  /* Bordas responsivas */
+  .border-responsive {
+    @apply border xs:border-2;
+  }
+  
+  /* Sombras responsivas */
+  .shadow-responsive {
+    @apply shadow-sm xs:shadow-md sm:shadow-lg;
+  }
+  
+  /* Z-index para modais em mobile */
+  .modal-z-index {
+    @apply z-50 xs:z-40;
+  }
+  
+  /* Animações suaves para transições de tamanho */
+  .transition-responsive {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  /* Classes para cards responsivos */
+  .card-responsive {
+    @apply rounded-lg xs:rounded-xl border-responsive shadow-responsive transition-responsive hover:shadow-lg;
+  }
+  
+  /* Layout de dashboard responsivo */
+  .dashboard-layout {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6;
+  }
+  
+  /* Botões responsivos */
+  .button-responsive {
+    @apply height-responsive-button text-xs xs:text-sm px-3 xs:px-4 sm:px-6;
+  }
+  
+  /* Inputs responsivos */
+  .input-responsive {
+    @apply height-responsive-input text-xs xs:text-sm px-3 xs:px-4;
+  }
+}
