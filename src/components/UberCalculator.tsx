@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, BarChart3, CalendarIcon, RefreshCw, TrendingUp, TrendingDown, Route, Receipt } from 'lucide-react';
+import { ArrowUp, Calculator, Car, CreditCard, DollarSign, Fuel, BarChart3, CalendarIcon, RefreshCw, TrendingUp, TrendingDown, Route, Receipt, History, FileText, Clock, Filter } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ViagemService from '@/services/ViagemService';
+import DespesaService from '@/services/DespesaService';
 import Despesas from '@/components/Despesas';
+import { Viagem, Despesa } from '@/types';
 
 interface CalculationResult {
   fuelCost: number;
@@ -31,6 +34,334 @@ interface FuelComparison {
 export interface UberCalculatorProps {
   onDataUpdate?: () => void;
 }
+
+interface HistoricoComponentProps {
+  onDataUpdate: () => void;
+}
+
+const HistoricoComponent: React.FC<HistoricoComponentProps> = ({ onDataUpdate }) => {
+  const [viagens, setViagens] = useState<Viagem[]>([]);
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
+  const [filtroViagem, setFiltroViagem] = useState({
+    dataInicio: undefined as Date | undefined,
+    dataFim: undefined as Date | undefined,
+    periodo: 'ultimo-mes' // 'personalizado', 'ultimo-mes', 'ultimos-3-meses', 'ultimo-ano'
+  });
+  const [isDateInicioOpen, setIsDateInicioOpen] = useState(false);
+  const [isDateFimOpen, setIsDateFimOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const carregarDados = async () => {
+    setLoading(true);
+    try {
+      let dataInicio = new Date();
+      let dataFim = new Date();
+
+      // Calcular datas baseado no período selecionado
+      switch (filtroViagem.periodo) {
+        case 'ultimo-mes':
+          dataInicio.setMonth(dataInicio.getMonth() - 1);
+          break;
+        case 'ultimos-3-meses':
+          dataInicio.setMonth(dataInicio.getMonth() - 3);
+          break;
+        case 'ultimo-ano':
+          dataInicio.setFullYear(dataInicio.getFullYear() - 1);
+          break;
+        case 'personalizado':
+          if (filtroViagem.dataInicio && filtroViagem.dataFim) {
+            dataInicio = filtroViagem.dataInicio;
+            dataFim = filtroViagem.dataFim;
+          }
+          break;
+      }
+
+      // Buscar viagens no período
+      const todasViagens = await ViagemService.obterViagens();
+      const viagensFiltradas = todasViagens.filter(viagem => {
+        const dataViagem = new Date(viagem.data);
+        return dataViagem >= dataInicio && dataViagem <= dataFim;
+      });
+
+      // Buscar despesas no período
+      const todasDespesas = await DespesaService.obterDespesas();
+      const despesasFiltradas = todasDespesas.filter(despesa => {
+        const dataDespesa = new Date(despesa.data);
+        return dataDespesa >= dataInicio && dataDespesa <= dataFim;
+      });
+
+      setViagens(viagensFiltradas);
+      setDespesas(despesasFiltradas);
+    } catch (error) {
+      console.error('Erro ao carregar dados do histórico:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    carregarDados();
+  }, [filtroViagem.periodo, filtroViagem.dataInicio, filtroViagem.dataFim]);
+
+  const calcularResumo = () => {
+    const totalGanhos = viagens.reduce((total, viagem) => total + viagem.valorGanho, 0);
+    const totalCombustivel = viagens.reduce((total, viagem) => total + (viagem.gastosCombustivel || 0), 0);
+    const totalDespesas = despesas.reduce((total, despesa) => total + despesa.valor, 0);
+    const lucroLiquido = totalGanhos - totalCombustivel - totalDespesas;
+
+    return {
+      totalGanhos,
+      totalCombustivel,
+      totalDespesas,
+      lucroLiquido,
+      totalViagens: viagens.length,
+      totalKm: viagens.reduce((total, viagem) => total + viagem.kmRodados, 0)
+    };
+  };
+
+  const resumo = calcularResumo();
+
+  return (
+    <Card className="border shadow-lg bg-card p-2 xs:p-3 sm:p-6 md:p-8 lg:p-10 rounded-xl">
+      <CardHeader className="pb-3 xs:pb-4 sm:pb-6">
+        <CardTitle className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold flex items-center gap-2 xs:gap-2.5 sm:gap-3">
+          <div className="p-1 xs:p-1.5 sm:p-2 rounded-lg bg-primary/10">
+            <History className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-primary" />
+          </div>
+          <span className="leading-tight">Histórico Detalhado</span>
+        </CardTitle>
+        <p className="text-muted-foreground leading-relaxed text-xs xs:text-sm sm:text-base md:text-lg">
+          Analise suas viagens e despesas por período personalizado
+        </p>
+      </CardHeader>
+
+      <CardContent className="space-y-4 xs:space-y-6 sm:space-y-8 p-2 xs:p-3 sm:p-6 md:p-8 lg:p-10 pt-0">
+        {/* Filtros de Período */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xs:gap-6 sm:gap-8 md:gap-10 p-4 xs:p-6 bg-muted/20 rounded-lg border">
+          <div className="space-y-2 xs:space-y-3">
+            <Label className="text-xs xs:text-sm font-medium">Período</Label>
+            <Select value={filtroViagem.periodo} onValueChange={(value) => setFiltroViagem({...filtroViagem, periodo: value})}>
+              <SelectTrigger className="h-10 xs:h-12">
+                <SelectValue placeholder="Selecione o período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ultimo-mes">Último mês</SelectItem>
+                <SelectItem value="ultimos-3-meses">Últimos 3 meses</SelectItem>
+                <SelectItem value="ultimo-ano">Último ano</SelectItem>
+                <SelectItem value="personalizado">Período personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filtroViagem.periodo === 'personalizado' && (
+            <>
+              <div className="space-y-2 xs:space-y-3">
+                <Label className="text-xs xs:text-sm font-medium">Data Início</Label>
+                <Popover open={isDateInicioOpen} onOpenChange={setIsDateInicioOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left h-10 xs:h-12">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {filtroViagem.dataInicio ? format(filtroViagem.dataInicio, "PPP", { locale: ptBR }) : "Selecionar data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={filtroViagem.dataInicio}
+                      onSelect={(date) => {
+                        setFiltroViagem({...filtroViagem, dataInicio: date});
+                        setIsDateInicioOpen(false);
+                      }}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2 xs:space-y-3">
+                <Label className="text-xs xs:text-sm font-medium">Data Fim</Label>
+                <Popover open={isDateFimOpen} onOpenChange={setIsDateFimOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left h-10 xs:h-12">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {filtroViagem.dataFim ? format(filtroViagem.dataFim, "PPP", { locale: ptBR }) : "Selecionar data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={filtroViagem.dataFim}
+                      onSelect={(date) => {
+                        setFiltroViagem({...filtroViagem, dataFim: date});
+                        setIsDateFimOpen(false);
+                      }}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </>
+          )}
+
+          <div className="flex items-end">
+            <Button 
+              onClick={carregarDados}
+              disabled={loading}
+              className="w-full h-10 xs:h-12"
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              {loading ? 'Carregando...' : 'Filtrar'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Cards de Resumo */}
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 xs:gap-6 sm:gap-8">
+          <Card className="border-2 border-blue-400/40 bg-blue-500/5">
+            <CardContent className="p-4 xs:p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs xs:text-sm font-medium text-muted-foreground">Total Ganhos</span>
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="text-lg xs:text-xl sm:text-2xl font-bold text-blue-600">
+                R$ {resumo.totalGanhos.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">{resumo.totalViagens} viagens</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-red-400/40 bg-red-500/5">
+            <CardContent className="p-4 xs:p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs xs:text-sm font-medium text-muted-foreground">Combustível</span>
+                <Fuel className="h-4 w-4 text-red-600" />
+              </div>
+              <div className="text-lg xs:text-xl sm:text-2xl font-bold text-red-600">
+                R$ {resumo.totalCombustivel.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">{resumo.totalKm.toFixed(0)} km rodados</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-orange-400/40 bg-orange-500/5">
+            <CardContent className="p-4 xs:p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs xs:text-sm font-medium text-muted-foreground">Despesas</span>
+                <Receipt className="h-4 w-4 text-orange-600" />
+              </div>
+              <div className="text-lg xs:text-xl sm:text-2xl font-bold text-orange-600">
+                R$ {resumo.totalDespesas.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">{despesas.length} despesas</p>
+            </CardContent>
+          </Card>
+
+          <Card className={`border-2 ${resumo.lucroLiquido >= 0 ? 'border-green-400/40 bg-green-500/5' : 'border-red-400/40 bg-red-500/5'}`}>
+            <CardContent className="p-4 xs:p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs xs:text-sm font-medium text-muted-foreground">Lucro Líquido</span>
+                <DollarSign className={`h-4 w-4 ${resumo.lucroLiquido >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              </div>
+              <div className={`text-lg xs:text-xl sm:text-2xl font-bold ${resumo.lucroLiquido >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                R$ {resumo.lucroLiquido.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {resumo.lucroLiquido >= 0 ? 'Lucro' : 'Prejuízo'} no período
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lista de Viagens */}
+        {viagens.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Car className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Viagens do Período</h3>
+            </div>
+            <div className="grid gap-4">
+              {viagens.map((viagem) => (
+                <Card key={viagem.id} className="border border-border/50 hover:shadow-lg transition-all duration-200">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Data</p>
+                        <p className="font-medium">{format(new Date(viagem.data), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Distância</p>
+                        <p className="font-medium">{viagem.kmRodados} km</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Ganhos</p>
+                        <p className="font-medium text-blue-600">R$ {viagem.valorGanho.toFixed(2)}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Lucro</p>
+                        <p className={`font-medium ${(viagem.lucroLiquido || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          R$ {(viagem.lucroLiquido || 0).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Lista de Despesas */}
+        {despesas.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Despesas do Período</h3>
+            </div>
+            <div className="grid gap-4">
+              {despesas.map((despesa) => (
+                <Card key={despesa.id} className="border border-border/50 hover:shadow-lg transition-all duration-200">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Data</p>
+                        <p className="font-medium">{format(new Date(despesa.data), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Categoria</p>
+                        <p className="font-medium">{despesa.categoria}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Descrição</p>
+                        <p className="font-medium">{despesa.descricao}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Valor</p>
+                        <p className="font-medium text-red-600">R$ {despesa.valor.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mensagem quando não há dados */}
+        {viagens.length === 0 && despesas.length === 0 && !loading && (
+          <div className="text-center py-12">
+            <FileText className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">
+              Nenhum dado encontrado
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Não há viagens ou despesas registradas no período selecionado.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
   const [isFormDisabled, setIsFormDisabled] = useState(false);
@@ -199,6 +530,11 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
             <Fuel className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden xs:inline sm:inline">Combustível</span>
             <span className="xs:hidden sm:hidden">Comb</span>
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="flex-1 flex items-center justify-center gap-1 xs:gap-1.5 sm:gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-1.5 xs:py-2 px-1 xs:px-2 sm:px-4 text-xs xs:text-sm">
+            <History className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline sm:inline">Histórico</span>
+            <span className="xs:hidden sm:hidden">Hist</span>
           </TabsTrigger>
         </TabsList>
 
@@ -638,6 +974,17 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="historico">
+          <div className="space-y-4 xs:space-y-6 sm:space-y-8">
+            {/* Importar o componente Dashboard aqui */}
+            {onDataUpdate && (
+              <div className="w-full">
+                <HistoricoComponent onDataUpdate={onDataUpdate} />
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
