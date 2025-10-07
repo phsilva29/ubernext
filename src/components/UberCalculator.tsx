@@ -541,15 +541,10 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
         <TabsContent value="uber">
           <Card className="border shadow-lg bg-card p-2 xs:p-3 sm:p-6 md:p-8 lg:p-10 rounded-xl">
             <CardHeader className="pb-3 xs:pb-4 sm:pb-6">
-              <CardTitle className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold flex items-center gap-2 xs:gap-2.5 sm:gap-3">
-                <div className="p-1 xs:p-1.5 sm:p-2 rounded-lg bg-primary/10">
-                  <Calculator className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-primary" />
-                </div>
-                <span className="leading-tight">Calculadora Uber</span>
-              </CardTitle>
-              <p className="text-muted-foreground leading-relaxed text-xs xs:text-sm sm:text-base md:text-lg">
-                Calcule gastos, receita e lucro das suas viagens de forma rápida e precisa
-              </p>
+              <div className="mb-2">
+                <h1 className="text-4xl font-bold text-foreground text-left">Calculadora Uber</h1>
+                <p className="text-lg text-muted-foreground text-left mt-1">Calcule seus ganhos e gastos com combustível de forma prática</p>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4 xs:space-y-6 sm:space-y-8 p-2 xs:p-3 sm:p-6 md:p-8 lg:p-10 pt-0">
               <form autoComplete="off" className="space-y-4 xs:space-y-6 sm:space-y-8">

@@ -32,10 +32,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('Auth event:', event, session?.user?.email_confirmed_at);
+        
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+
+        // Verificar confirmação de email
+        if (event === 'SIGNED_IN' && session?.user && !session.user.email_confirmed_at) {
+          console.warn('Email não confirmado ainda');
+        }
+        
+        if (event === 'TOKEN_REFRESHED' && session?.user?.email_confirmed_at) {
+          console.log('Email confirmado e token atualizado');
+        }
       }
     );
 
