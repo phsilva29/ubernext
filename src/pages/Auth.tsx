@@ -412,9 +412,13 @@ const Auth = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Car className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Calculadora Uber</h1>
+          <div className="flex flex-col items-center justify-center mb-4">
+            <img 
+              src="/logo.dd.png"
+              alt="DriveControl Logo" 
+              className="h-20 w-20"
+            />
+            <h1 className="text-4xl font-bold text-blue-600">DriveControl</h1>
           </div>
           <p className="text-muted-foreground">
             Gerencie seus ganhos e gastos como motorista

@@ -53,7 +53,7 @@ const Index = () => {
           {/* Header responsivo */}
           <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3 xs:gap-4 sm:gap-6 mb-4 xs:mb-6 sm:mb-8 lg:mb-10">
             <div className="text-center xs:text-left flex-1 w-full xs:w-auto">
-              <div className="flex items-center gap-4 mb-2">
+              <div className="flex items-center gap-1 mb-2">
                 <div className="rounded-xl p-2 flex items-center justify-center">
                   <img 
                     src="/logo.dd.png"
