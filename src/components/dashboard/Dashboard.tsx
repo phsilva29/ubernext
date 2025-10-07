@@ -627,10 +627,10 @@ export function Dashboard({ dados: dadosDashboard, onDataUpdate }: DashboardProp
                       </div>
                     );
                   })()}
-                  <div className="bg-purple-500/5 p-2 sm:p-3 rounded-lg border border-purple-500/20">
-                     <span className="text-xs text-purple-600 font-medium hidden sm:inline">Valor do Combustível</span>
-                    <span className="text-xs text-purple-600 font-medium sm:hidden">Combustível</span>
-                    <p className="text-sm sm:text-base md:text-lg font-bold text-purple-600 truncate">R$ {viagem.precoGasolina.toFixed(2)}</p>
+                  <div className="bg-yellow-500/5 p-2 sm:p-3 rounded-lg border border-yellow-500/20">
+                     <span className="text-xs text-yellow-600 font-medium hidden sm:inline">Valor do Combustível</span>
+                    <span className="text-xs text-yellow-600 font-medium sm:hidden">Combustível</span>
+                    <p className="text-sm sm:text-base md:text-lg font-bold text-yellow-600 truncate">R$ {viagem.precoGasolina.toFixed(2)}</p>
                   </div>
                 </div>
                 

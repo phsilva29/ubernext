@@ -729,12 +729,12 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
               Resumo da Viagem
             </h3>
             <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6 mt-3 xs:mt-4 sm:mt-6">
-              <div className="bg-zinc-900 border-2 border-red-400/40 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+              <div className="bg-zinc-900 border-2 border-yellow-400/40 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
                 <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2 w-full justify-center">
-                  <TrendingDown className="h-5 w-5 xs:h-6 xs:w-6 sm:h-8 sm:w-8 text-red-400" />
+                  <TrendingDown className="h-5 w-5 xs:h-6 xs:w-6 sm:h-8 sm:w-8 text-yellow-400" />
                   <span className="text-xs xs:text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Custo Combustível</span>
                 </div>
-                <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 whitespace-nowrap w-full text-center">R$ {uberResults.fuelCost.toFixed(2)}</span>
+                <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-500 whitespace-nowrap w-full text-center">R$ {uberResults.fuelCost.toFixed(2)}</span>
               </div>
               <div className="bg-zinc-900 border-2 border-blue-400/40 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
                 <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2 w-full justify-center">
