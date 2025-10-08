@@ -20,6 +20,7 @@ class DespesaService {
       const despesaData = typeof despesa.data === 'string' 
         ? despesa.data 
         : despesa.data.toISOString().split('T')[0];
+      const origemSegura = despesa.origem || 'Não Informado';
 
       try {
         const { data, error } = await supabase
@@ -30,7 +31,7 @@ class DespesaService {
             descricao: despesa.descricao,
             valor: despesa.valor,
             data: despesaData,
-            origem: despesa.origem,
+            origem: origemSegura,
             observacoes: despesa.observacoes || null
           }])
           .select()
@@ -41,12 +42,12 @@ class DespesaService {
       } catch (dbError) {
         console.warn('Erro ao salvar no banco, usando localStorage:', dbError);
         // Fallback para localStorage
-        return this.salvarDespesaLocal(despesa);
+        return this.salvarDespesaLocal({ ...despesa, origem: origemSegura });
       }
     } catch (error) {
       console.error('Erro ao salvar despesa:', error);
       // Fallback para localStorage
-      return this.salvarDespesaLocal(despesa);
+      return this.salvarDespesaLocal({ ...despesa, origem: despesa.origem || 'Não Informado' });
     }
   }
 
@@ -58,6 +59,12 @@ class DespesaService {
       id: this.generateId(),
       created_at: new Date().toISOString()
     };
+    // Marcar como pendente usando propriedade simbólica não tipada (mantida apenas em memória)
+    Object.defineProperty(novaDespesa, '__pending', {
+      value: true,
+      enumerable: false,
+      configurable: true
+    });
     
     despesasExistentes.push(novaDespesa);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(despesasExistentes));
@@ -204,6 +211,7 @@ class DespesaService {
       const despesaData = typeof despesaAtualizada.data === 'string' 
         ? despesaAtualizada.data 
         : despesaAtualizada.data.toISOString().split('T')[0];
+      const origemSegura = despesaAtualizada.origem || 'Não Informado';
       
       try {
         const { data, error } = await supabase
@@ -213,7 +221,7 @@ class DespesaService {
             descricao: despesaAtualizada.descricao,
             valor: despesaAtualizada.valor,
             data: despesaData,
-            origem: despesaAtualizada.origem,
+            origem: origemSegura,
             observacoes: despesaAtualizada.observacoes || null
           })
           .eq('id', id)
