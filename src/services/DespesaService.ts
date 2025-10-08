@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 class DespesaService {
   private static STORAGE_KEY = 'ubernext_despesas';
-  private static SYNC_FLAG_KEY = 'ubernext_despesas_synced';
+  // Removido SYNC_FLAG_KEY: sincronização agora é incremental e contínua
 
   // Método para gerar ID único
   private static generateId(): string {
@@ -104,16 +104,16 @@ class DespesaService {
       if (!user) return this.obterDespesasLocal();
 
       try {
-        // Tentar sincronizar despesas locais caso exista algo pendente
-        await this.syncLocalDespesas();
+        await this.syncLocalDespesas(); // sempre tentar sincronizar
         const { data, error } = await supabase
           .from('despesas')
           .select('*')
           .eq('user_id', user.id)
           .order('data', { ascending: false });
-
         if (error) throw error;
-        return data.map(this.mapDespesaFromDB);
+        const servidor = data.map(this.mapDespesaFromDB);
+        const locaisRestantes = this.obterDespesasLocal(); // só restam as que falharam
+        return [...servidor, ...locaisRestantes];
       } catch (dbError) {
         console.warn('Erro ao obter do banco, usando localStorage:', dbError);
         return this.obterDespesasLocal();
@@ -127,19 +127,25 @@ class DespesaService {
   // Sincronizar despesas locais para o banco
   private static async syncLocalDespesas() {
     try {
-      const synced = localStorage.getItem(this.SYNC_FLAG_KEY);
       const localDespesas = this.obterDespesasLocal();
-      if (synced === 'true' || localDespesas.length === 0) return; // Nada a fazer
-
+      if (localDespesas.length === 0) return;
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return; // Sem usuário autenticado, não sincroniza
+      if (!user) return;
 
+      // Buscar despesas existentes para deduplicação
+      const { data: existing, error: existingError } = await supabase
+        .from('despesas')
+        .select('id, data, descricao, valor')
+        .eq('user_id', user.id);
+      if (existingError) throw existingError;
+      const existingKey = new Set((existing || []).map(d => `${d.data}|${d.descricao}|${d.valor}`));
+
+      const pendentes: Despesa[] = [];
       for (const despesa of localDespesas) {
         try {
-          const despesaData = typeof despesa.data === 'string' 
-            ? despesa.data 
-            : despesa.data.toISOString().split('T')[0];
-
+          const despesaData = typeof despesa.data === 'string' ? despesa.data : despesa.data.toISOString().split('T')[0];
+          const key = `${despesaData}|${despesa.descricao}|${despesa.valor}`;
+            if (existingKey.has(key)) continue;
           const { error } = await supabase
             .from('despesas')
             .insert([{
@@ -148,31 +154,28 @@ class DespesaService {
               descricao: despesa.descricao,
               valor: despesa.valor,
               data: despesaData,
-              origem: despesa.origem,
+              origem: despesa.origem || 'local',
               observacoes: despesa.observacoes || null
             }]);
           if (error) throw error;
+          existingKey.add(key);
         } catch (err) {
-          console.warn('Falha ao migrar despesa local, continuará armazenada localmente:', err);
+          console.warn('Falha ao migrar despesa local específica:', err);
+          pendentes.push(despesa);
         }
       }
 
-      // Verificar se todas migraram (heurística simples: tentar ler novamente e comparar)
-      const { data: serverDespesas, error: fetchError } = await supabase
-        .from('despesas')
-        .select('data, descricao, valor')
-        .eq('user_id', user.id)
-        .order('data', { ascending: false });
-      if (!fetchError && serverDespesas) {
-        // Se pelo menos 1 despesa do local existe no servidor, podemos limpar local
-        // (Simplificação: em cenário real, seria bom reconciliar uma a uma com hash)
+      if (pendentes.length === 0) {
         localStorage.removeItem(this.STORAGE_KEY);
-        localStorage.setItem(this.SYNC_FLAG_KEY, 'true');
+      } else {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(pendentes));
       }
     } catch (error) {
-      console.warn('Erro durante sincronização de despesas locais:', error);
+      console.warn('Erro geral durante sincronização incremental de despesas locais:', error);
     }
   }
+
+  static async forceSync() { await this.syncLocalDespesas(); }
 
   // Health check básico da tabela de despesas
   static async healthCheck(): Promise<{ ok: boolean; message: string; count?: number }> {
