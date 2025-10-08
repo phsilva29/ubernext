@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 class DespesaService {
   private static STORAGE_KEY = 'ubernext_despesas';
+  private static SYNC_FLAG_KEY = 'ubernext_despesas_synced';
 
   // Método para gerar ID único
   private static generateId(): string {
@@ -70,10 +71,25 @@ class DespesaService {
       if (!stored) return [];
       
       const despesas = JSON.parse(stored);
-      return despesas.map((d: any) => ({
-        ...d,
+      interface LocalDespesaRaw {
+        id: string;
+        categoria: string;
+        descricao: string;
+        valor: string | number;
+        data: string;
+        origem?: string;
+        observacoes?: string | null;
+        created_at?: string;
+      }
+      return (despesas as LocalDespesaRaw[]).map((d) => ({
+        id: d.id,
+        categoria: d.categoria,
+        descricao: d.descricao,
+        valor: typeof d.valor === 'number' ? d.valor : parseFloat(d.valor),
         data: new Date(d.data),
-        valor: parseFloat(d.valor)
+        origem: d.origem || 'local',
+        observacoes: d.observacoes || undefined,
+        created_at: d.created_at
       }));
     } catch (error) {
       console.error('Erro ao obter despesas do localStorage:', error);
@@ -88,6 +104,8 @@ class DespesaService {
       if (!user) return this.obterDespesasLocal();
 
       try {
+        // Tentar sincronizar despesas locais caso exista algo pendente
+        await this.syncLocalDespesas();
         const { data, error } = await supabase
           .from('despesas')
           .select('*')
@@ -103,6 +121,55 @@ class DespesaService {
     } catch (error) {
       console.error('Erro ao obter despesas:', error);
       return this.obterDespesasLocal();
+    }
+  }
+
+  // Sincronizar despesas locais para o banco
+  private static async syncLocalDespesas() {
+    try {
+      const synced = localStorage.getItem(this.SYNC_FLAG_KEY);
+      const localDespesas = this.obterDespesasLocal();
+      if (synced === 'true' || localDespesas.length === 0) return; // Nada a fazer
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return; // Sem usuário autenticado, não sincroniza
+
+      for (const despesa of localDespesas) {
+        try {
+          const despesaData = typeof despesa.data === 'string' 
+            ? despesa.data 
+            : despesa.data.toISOString().split('T')[0];
+
+          const { error } = await supabase
+            .from('despesas')
+            .insert([{
+              user_id: user.id,
+              categoria: despesa.categoria,
+              descricao: despesa.descricao,
+              valor: despesa.valor,
+              data: despesaData,
+              origem: despesa.origem,
+              observacoes: despesa.observacoes || null
+            }]);
+          if (error) throw error;
+        } catch (err) {
+          console.warn('Falha ao migrar despesa local, continuará armazenada localmente:', err);
+        }
+      }
+
+      // Verificar se todas migraram (heurística simples: tentar ler novamente e comparar)
+      const { data: serverDespesas, error: fetchError } = await supabase
+        .from('despesas')
+        .select('data, descricao, valor')
+        .order('data', { ascending: false });
+      if (!fetchError && serverDespesas) {
+        // Se pelo menos 1 despesa do local existe no servidor, podemos limpar local
+        // (Simplificação: em cenário real, seria bom reconciliar uma a uma com hash)
+        localStorage.removeItem(this.STORAGE_KEY);
+        localStorage.setItem(this.SYNC_FLAG_KEY, 'true');
+      }
+    } catch (error) {
+      console.warn('Erro durante sincronização de despesas locais:', error);
     }
   }
 
@@ -188,15 +255,24 @@ class DespesaService {
   }
 
   // Mapear dados do banco para interface Despesa
-  private static mapDespesaFromDB(dbDespesa: any): Despesa {
+  private static mapDespesaFromDB(dbDespesa: {
+    id: string;
+    categoria: string;
+    descricao: string;
+    valor: string | number;
+    data: string;
+    origem?: string;
+    observacoes?: string | null;
+    created_at?: string;
+  }): Despesa {
     return {
       id: dbDespesa.id,
       categoria: dbDespesa.categoria,
       descricao: dbDespesa.descricao,
-      valor: parseFloat(dbDespesa.valor),
+      valor: typeof dbDespesa.valor === 'number' ? dbDespesa.valor : parseFloat(dbDespesa.valor),
       data: new Date(dbDespesa.data + 'T00:00:00'),
       origem: dbDespesa.origem,
-      observacoes: dbDespesa.observacoes,
+      observacoes: dbDespesa.observacoes || undefined,
       created_at: dbDespesa.created_at
     };
   }

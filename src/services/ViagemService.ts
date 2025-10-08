@@ -3,11 +3,23 @@ import { supabase } from '@/integrations/supabase/client';
 import DespesaService from './DespesaService';
 
 class ViagemService {
+  // Validação de campos de viagem
+  private static validateViagemInput(viagem: Viagem) {
+    if (!viagem.data) throw new Error('Data da viagem é obrigatória');
+    if (isNaN(viagem.kmRodados) || viagem.kmRodados <= 0) throw new Error('Quilometragem inválida');
+    if (isNaN(viagem.precoGasolina) || viagem.precoGasolina <= 0) throw new Error('Preço da gasolina inválido');
+    if (isNaN(viagem.consumo) || viagem.consumo <= 0) throw new Error('Consumo inválido');
+    if (isNaN(viagem.valorGanho) || viagem.valorGanho < 0) throw new Error('Valor ganho inválido');
+    if (viagem.kmRodados > 2000) throw new Error('KM rodados muito alto para um único dia');
+    if (viagem.consumo > 40) throw new Error('Consumo informado parece incorreto');
+  }
   // Salvar uma nova viagem
   static async salvarViagem(viagem: Viagem): Promise<Viagem> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
+
+      this.validateViagemInput(viagem);
 
       const gastosCombustivel = (viagem.kmRodados / viagem.consumo) * viagem.precoGasolina;
       const lucroLiquido = viagem.valorGanho - gastosCombustivel;
@@ -17,21 +29,51 @@ class ViagemService {
         ? viagem.data 
         : viagem.data.toISOString().split('T')[0];
 
-      const { data, error } = await supabase
+      // Verificar se já existe viagem para o mesmo dia (evita duplicidade)
+      const { data: existing, error: existingError } = await supabase
         .from('viagens')
-        .insert([{
-          user_id: user.id,
-          data: viagemData,
-          km_rodados: viagem.kmRodados,
-          preco_gasolina: viagem.precoGasolina,
-          consumo: viagem.consumo,
-          valor_ganho: viagem.valorGanho,
-          gastos_combustivel: gastosCombustivel,
-          lucro_liquido: lucroLiquido,
-          lucro_km: lucroKm
-        }])
-        .select()
-        .single();
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('data', viagemData)
+        .maybeSingle();
+      if (existingError && existingError.code !== 'PGRST116') throw existingError;
+
+      let data;
+      let error;
+      if (existing) {
+        // Atualiza registro existente
+        ({ data, error } = await supabase
+          .from('viagens')
+          .update({
+            km_rodados: viagem.kmRodados,
+            preco_gasolina: viagem.precoGasolina,
+            consumo: viagem.consumo,
+            valor_ganho: viagem.valorGanho,
+            gastos_combustivel: gastosCombustivel,
+            lucro_liquido: lucroLiquido,
+            lucro_km: lucroKm
+          })
+          .eq('id', existing.id)
+          .eq('user_id', user.id)
+          .select()
+          .single());
+      } else {
+        ({ data, error } = await supabase
+          .from('viagens')
+          .insert([{
+            user_id: user.id,
+            data: viagemData,
+            km_rodados: viagem.kmRodados,
+            preco_gasolina: viagem.precoGasolina,
+            consumo: viagem.consumo,
+            valor_ganho: viagem.valorGanho,
+            gastos_combustivel: gastosCombustivel,
+            lucro_liquido: lucroLiquido,
+            lucro_km: lucroKm
+          }])
+          .select()
+          .single());
+      }
 
       if (error) throw error;
 
@@ -68,6 +110,8 @@ class ViagemService {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
+
+      this.validateViagemInput(viagemAtualizada);
 
       const gastosCombustivel = (viagemAtualizada.kmRodados / viagemAtualizada.consumo) * viagemAtualizada.precoGasolina;
       const lucroLiquido = viagemAtualizada.valorGanho - gastosCombustivel;
@@ -155,17 +199,28 @@ class ViagemService {
   }
 
   // Mapear dados do banco para interface Viagem
-  private static mapViagemFromDB(dbViagem: any): Viagem {
+  private static mapViagemFromDB(dbViagem: {
+    id: string;
+    data: string;
+    km_rodados: string | number;
+    preco_gasolina: string | number;
+    consumo: string | number;
+    valor_ganho: string | number;
+    gastos_combustivel?: string | number | null;
+    lucro_liquido?: string | number | null;
+    lucro_km?: string | number | null;
+  }): Viagem {
+    const v = dbViagem;
     return {
-      id: dbViagem.id,
-      data: new Date(dbViagem.data + 'T00:00:00'), // Trata a data como local para evitar fuso horário
-      kmRodados: parseFloat(dbViagem.km_rodados),
-      precoGasolina: parseFloat(dbViagem.preco_gasolina),
-      consumo: parseFloat(dbViagem.consumo),
-      valorGanho: parseFloat(dbViagem.valor_ganho),
-      gastosCombustivel: dbViagem.gastos_combustivel ? parseFloat(dbViagem.gastos_combustivel) : undefined,
-      lucroLiquido: dbViagem.lucro_liquido ? parseFloat(dbViagem.lucro_liquido) : undefined,
-      lucroKm: dbViagem.lucro_km ? parseFloat(dbViagem.lucro_km) : undefined
+      id: v.id,
+      data: new Date(v.data + 'T00:00:00'),
+      kmRodados: typeof v.km_rodados === 'number' ? v.km_rodados : parseFloat(v.km_rodados),
+      precoGasolina: typeof v.preco_gasolina === 'number' ? v.preco_gasolina : parseFloat(v.preco_gasolina),
+      consumo: typeof v.consumo === 'number' ? v.consumo : parseFloat(v.consumo),
+      valorGanho: typeof v.valor_ganho === 'number' ? v.valor_ganho : parseFloat(v.valor_ganho),
+      gastosCombustivel: v.gastos_combustivel != null ? (typeof v.gastos_combustivel === 'number' ? v.gastos_combustivel : parseFloat(v.gastos_combustivel)) : undefined,
+      lucroLiquido: v.lucro_liquido != null ? (typeof v.lucro_liquido === 'number' ? v.lucro_liquido : parseFloat(v.lucro_liquido)) : undefined,
+      lucroKm: v.lucro_km != null ? (typeof v.lucro_km === 'number' ? v.lucro_km : parseFloat(v.lucro_km)) : undefined
     };
   }
 
