@@ -161,6 +161,7 @@ class DespesaService {
       const { data: serverDespesas, error: fetchError } = await supabase
         .from('despesas')
         .select('data, descricao, valor')
+        .eq('user_id', user.id)
         .order('data', { ascending: false });
       if (!fetchError && serverDespesas) {
         // Se pelo menos 1 despesa do local existe no servidor, podemos limpar local
@@ -170,6 +171,24 @@ class DespesaService {
       }
     } catch (error) {
       console.warn('Erro durante sincronização de despesas locais:', error);
+    }
+  }
+
+  // Health check básico da tabela de despesas
+  static async healthCheck(): Promise<{ ok: boolean; message: string; count?: number }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { ok: false, message: 'Usuário não autenticado' };
+
+      const { count, error } = await supabase
+        .from('despesas')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return { ok: true, message: 'Conexão e permissão OK', count: count || 0 };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { ok: false, message: 'Falha ao acessar despesas: ' + message };
     }
   }
 
