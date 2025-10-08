@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils";
 import ViagemService from '@/services/ViagemService';
 import DespesaService from '@/services/DespesaService';
 import Despesas from '@/components/Despesas';
-import { Viagem, Despesa } from '@/types';
+import { Viagem, Despesa, DadosDashboard } from '@/types';
+import { Dashboard } from '@/components/dashboard/Dashboard';
 
 interface CalculationResult {
   fuelCost: number;
@@ -33,6 +34,7 @@ interface FuelComparison {
 
 export interface UberCalculatorProps {
   onDataUpdate?: () => void;
+  dashboardData?: DadosDashboard | null;
 }
 
 interface HistoricoComponentProps {
@@ -51,7 +53,7 @@ const HistoricoComponent: React.FC<HistoricoComponentProps> = ({ onDataUpdate })
   const [isDateFimOpen, setIsDateFimOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     setLoading(true);
     try {
       let dataInicio = new Date();
@@ -97,11 +99,11 @@ const HistoricoComponent: React.FC<HistoricoComponentProps> = ({ onDataUpdate })
     } finally {
       setLoading(false);
     }
-  };
+  }, [filtroViagem.periodo, filtroViagem.dataInicio, filtroViagem.dataFim]);
 
   React.useEffect(() => {
     carregarDados();
-  }, [filtroViagem.periodo, filtroViagem.dataInicio, filtroViagem.dataFim]);
+  }, [carregarDados]);
 
   const calcularResumo = () => {
     const totalGanhos = viagens.reduce((total, viagem) => total + viagem.valorGanho, 0);
@@ -363,7 +365,12 @@ const HistoricoComponent: React.FC<HistoricoComponentProps> = ({ onDataUpdate })
   );
 };
 
-const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
+const UberCalculator = ({ onDataUpdate, dashboardData }: UberCalculatorProps) => {
+  const [showDashboard, setShowDashboard] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+  const stored = localStorage.getItem('drivercontrol.showDashboard');
+    return stored === null ? true : stored === 'true';
+  });
   const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [uberData, setUberData] = useState({
     data: undefined as Date | undefined,
@@ -729,12 +736,13 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
               Resumo da Viagem
             </h3>
             <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6 mt-3 xs:mt-4 sm:mt-6">
-              <div className="bg-zinc-900 border-2 border-yellow-400/40 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+              {/* CUSTO COMBUSTÍVEL EM VERMELHO - USANDO PALETA DO SITE */}
+              <div className="bg-zinc-900 border-2 border-destructive/40 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
                 <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2 w-full justify-center">
-                  <TrendingDown className="h-5 w-5 xs:h-6 xs:w-6 sm:h-8 sm:w-8 text-yellow-400" />
+                  <TrendingDown className="h-5 w-5 xs:h-6 xs:w-6 sm:h-8 sm:w-8 text-destructive" />
                   <span className="text-xs xs:text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Custo Combustível</span>
                 </div>
-                <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-500 whitespace-nowrap w-full text-center">R$ {uberResults.fuelCost.toFixed(2)}</span>
+                <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-destructive whitespace-nowrap w-full text-center">R$ {uberResults.fuelCost.toFixed(2)}</span>
               </div>
               <div className="bg-zinc-900 border-2 border-blue-400/40 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
                 <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2 w-full justify-center">
@@ -743,12 +751,13 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
                 </div>
                 <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 whitespace-nowrap w-full text-center">R$ {uberResults.totalIncome.toFixed(2)}</span>
               </div>
-              <div className="bg-zinc-900 border-2 border-primary/30 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
+              {/* LUCRO LÍQUIDO EM VERDE - USANDO PALETA DO SITE */}
+              <div className="bg-zinc-900 border-2 border-success/40 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
                 <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2 w-full justify-center">
-                  <TrendingUp className="h-5 w-5 xs:h-6 xs:w-6 sm:h-8 sm:w-8 text-primary" />
+                  <TrendingUp className="h-5 w-5 xs:h-6 xs:w-6 sm:h-8 sm:w-8 text-success" />
                   <span className="text-xs xs:text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Lucro Líquido</span>
                 </div>
-                <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-primary whitespace-nowrap w-full text-center">R$ {uberResults.netProfit.toFixed(2)}</span>
+                <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-success whitespace-nowrap w-full text-center">R$ {uberResults.netProfit.toFixed(2)}</span>
               </div>
               <div className="bg-zinc-900 border-2 border-purple-400/40 shadow-2xl rounded-xl p-3 xs:p-4 sm:p-6 flex flex-col items-center justify-center gap-1.5 xs:gap-2 hover:scale-105 transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
                 <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2 w-full justify-center">
@@ -760,6 +769,31 @@ const UberCalculator = ({ onDataUpdate }: UberCalculatorProps) => {
             </div>
           </CardContent>
         )}
+        {/* Botão Toggle do Dashboard */}
+        <div className="mt-8 xs:mt-10 flex flex-col gap-4">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowDashboard(v => {
+                  const next = !v;
+                  try { localStorage.setItem('drivercontrol.showDashboard', String(next)); } catch { /* ignore storage errors */ }
+                  return next;
+                });
+              }}
+              className="border-2 hover:border-primary/60 transition-all text-xs xs:text-sm"
+            >
+              {showDashboard ? 'Ocultar Analytics' : 'Mostrar Analytics'}
+            </Button>
+          </div>
+          {showDashboard && (
+            <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
+              <Dashboard dados={dashboardData || undefined} onDataUpdate={onDataUpdate} />
+            </div>
+          )}
+        </div>
         </TabsContent>
 
         <TabsContent value="despesas">

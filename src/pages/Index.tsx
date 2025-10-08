@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import UberCalculator from "@/components/UberCalculator";
-import { Dashboard } from "@/components/dashboard/Dashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
@@ -57,7 +56,7 @@ const Index = () => {
                 <div className="rounded-xl p-2 flex items-center justify-center">
                   <img 
                     src="/logo.dd.png"
-                    alt="DriveControl Logo" 
+                    alt="DriverControl Logo" 
                     className="h-16 w-16"
                     onError={(e) => {
                       console.log('Erro ao carregar imagem:', e);
@@ -66,7 +65,7 @@ const Index = () => {
                   />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-blue-600">DriveControl</h1>
+                  <h1 className="text-3xl font-bold text-blue-600">DriverControl</h1>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
@@ -124,13 +123,10 @@ const Index = () => {
           
           {/* Calculadora com espaçamento responsivo */}
           <div className="w-full mb-4 xs:mb-6 sm:mb-8 lg:mb-10">
-            <UberCalculator onDataUpdate={carregarDadosDashboard} />
+            <UberCalculator onDataUpdate={carregarDadosDashboard} dashboardData={dashboardData} />
           </div>
           
-          {/* Dashboard */}
-          <div className="w-full">
-            <Dashboard dados={dashboardData || undefined} onDataUpdate={carregarDadosDashboard} />
-          </div>
+          {/* Dashboard removido desta página: agora é exibido apenas dentro da aba principal da calculadora */}
         </div>
       </div>
     </div>

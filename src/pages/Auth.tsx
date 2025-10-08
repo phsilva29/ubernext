@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Car, LogIn, UserPlus, Mail, Lock, User, CheckCircle, AlertCircle, Clock, Shield } from 'lucide-react';
-import OTPInput from '@/components/ui/otp-input';
+import { Car, LogIn, UserPlus, Mail, Lock, User, CheckCircle, AlertCircle } from 'lucide-react';
 
 // Função para validar email com regex mais rigorosa
 const validateEmail = (email: string): { isValid: boolean; message?: string } => {
@@ -66,11 +65,7 @@ const validatePassword = (password: string): { isValid: boolean; message?: strin
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
-  const [showOtpVerification, setShowOtpVerification] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [pendingEmail, setPendingEmail] = useState('');
-  const [otpCountdown, setOtpCountdown] = useState(0);
+  // Removidos estados de OTP/verificação
   const [emailValidation, setEmailValidation] = useState<{ isValid: boolean; message?: string }>({ isValid: true });
   const [passwordValidation, setPasswordValidation] = useState<{ isValid: boolean; message?: string; strength?: 'weak' | 'medium' | 'strong' }>({ isValid: true });
   const navigate = useNavigate();
@@ -137,13 +132,7 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
 
-  // Countdown para reenvio de OTP
-  useEffect(() => {
-    if (otpCountdown > 0) {
-      const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [otpCountdown]);
+  // Countdown OTP removido
 
   // Validação em tempo real do email
   const handleEmailChange = (email: string, isSignup: boolean = false) => {
@@ -163,135 +152,7 @@ const Auth = () => {
     setPasswordValidation(validation);
   };
 
-  // Verificar código OTP
-  const handleOtpVerification = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    if (otpCode.length !== 6) {
-      setError('Código deve ter 6 dígitos');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      console.log('🔍 Verificando OTP:', otpCode, 'para email:', pendingEmail);
-      
-      // Verificar OTP para login/cadastro
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: pendingEmail,
-        token: otpCode,
-        type: 'email'
-      });
-
-      console.log('📊 Resultado da verificação OTP:', { data, error });
-
-      if (error) {
-        console.error('❌ Erro na verificação:', error);
-        if (error.message.includes('Token has expired') || error.message.includes('expired')) {
-          setError('⏰ Código expirado. Solicite um novo código.');
-        } else if (error.message.includes('Invalid token') || error.message.includes('invalid')) {
-          setError('🚫 Código inválido. Verifique e tente novamente.');
-        } else {
-          setError('❌ ' + error.message);
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      if (data.user && data.session) {
-        console.log('✅ OTP VERIFICADO! Usuário autenticado:', data.user.email);
-        
-        // OBRIGATÓRIO: Definir senha para novos usuários
-        if (signupData.password) {
-          console.log('🔐 Definindo senha obrigatória para novo usuário...');
-          
-          try {
-            const { error: passwordError } = await supabase.auth.updateUser({
-              password: signupData.password,
-              data: {
-                nome: signupData.nome.trim(),
-                email_verified: true,
-                verified_at: new Date().toISOString()
-              }
-            });
-            
-            if (passwordError) {
-              console.error('⚠️ Erro ao definir senha:', passwordError);
-              toast({
-                title: "⚠️ Aviso",
-                description: "Conta criada, mas houve problema ao definir senha. Entre em contato.",
-                variant: "destructive"
-              });
-            } else {
-              console.log('✅ Senha definida com sucesso!');
-            }
-          } catch (passErr) {
-            console.error('💥 Erro inesperado ao definir senha:', passErr);
-          }
-        }
-
-        toast({
-          title: "🎉 Email Verificado!",
-          description: "Conta criada e verificada com sucesso!",
-        });
-        
-        console.log('🚀 Redirecionando para dashboard...');
-        navigate('/');
-      } else {
-        console.error('❌ Verificação falhou - sem usuário ou sessão');
-        setError('Erro na verificação. Tente novamente.');
-      }
-    } catch (err) {
-      console.error('💥 Erro inesperado na verificação:', err);
-      setError('Erro inesperado. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Reenviar código OTP
-  const handleResendOtp = async () => {
-    if (otpCountdown > 0) return; // Ainda no período de espera
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      console.log('📤 Reenviando OTP para:', pendingEmail);
-      
-      // Reenviar OTP usando signInWithOtp - sempre envia código
-      const { error } = await supabase.auth.signInWithOtp({
-        email: pendingEmail,
-        options: {
-          shouldCreateUser: true, // Manter criação se não existir
-          data: {
-            nome: signupData.nome.trim(),
-            pending_password: signupData.password
-          }
-        }
-      });
-
-      if (error) {
-        console.error('❌ Erro ao reenviar:', error);
-        setError('Erro ao reenviar código. Tente novamente.');
-      } else {
-        console.log('✅ Código reenviado com sucesso!');
-        toast({
-          title: "📧 Código Reenviado!",
-          description: "Novo código enviado para seu email.",
-        });
-        setOtpCode(''); // Limpar código anterior
-        setOtpCountdown(60); // 60 segundos de espera
-      }
-    } catch (err) {
-      console.error('💥 Erro inesperado no reenvio:', err);
-      setError('Erro inesperado. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fluxo OTP removido
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,42 +224,27 @@ const Auth = () => {
     }
 
     try {
-      console.log('🚀 FORÇANDO CADASTRO COM OTP OBRIGATÓRIO:', signupData.email);
-      
-      // NOVA ESTRATÉGIA: Só usar signInWithOtp que sempre envia código
-      // Não usar signUp que pode criar usuário sem verificação
-      const { data, error } = await supabase.auth.signInWithOtp({
+      const { data, error } = await supabase.auth.signUp({
         email: signupData.email.toLowerCase().trim(),
-        options: {
-          shouldCreateUser: true, // Criar se não existir
-          data: {
-            nome: signupData.nome.trim(),
-            pending_password: signupData.password // Armazenar senha temporariamente
-          }
-        }
+        password: signupData.password,
+        options: { data: { nome: signupData.nome.trim() } }
       });
 
       if (error) {
-        console.error('❌ Erro ao enviar OTP:', error);
+        console.error('❌ Erro ao cadastrar:', error);
         if (error.message.includes('User already registered')) {
           setError('Este email já está cadastrado. Tente fazer login.');
         } else if (error.message.includes('Signups not allowed')) {
-          setError('Cadastro temporariamente desabilitado. Entre em contato.');  
+          setError('Cadastro desabilitado.');
         } else {
-          setError('Erro ao enviar código de verificação: ' + error.message);
+          setError('Erro ao cadastrar: ' + error.message);
         }
         return;
       }
 
-      console.log('✅ OTP enviado com sucesso - CADASTRO OBRIGATÓRIO COM VERIFICAÇÃO');
-      setPendingEmail(signupData.email.toLowerCase().trim());
-      setShowOtpVerification(true);
-      setOtpCountdown(60);
-      
-      toast({
-        title: "🔐 Verificação Obrigatória!",
-        description: "Código enviado. Você DEVE verificar para acessar o sistema.",
-      });
+      if (data.user) {
+        toast({ title: 'Conta criada!', description: 'Você já pode fazer login.' });
+      }
 
     } catch (err) {
       console.error('💥 Erro inesperado:', err);
@@ -415,10 +261,10 @@ const Auth = () => {
           <div className="flex flex-col items-center justify-center mb-4">
             <img 
               src="/logo.dd.png"
-              alt="DriveControl Logo" 
+              alt="DriverControl Logo" 
               className="h-20 w-20"
             />
-            <h1 className="text-4xl font-bold text-blue-600">DriveControl</h1>
+            <h1 className="text-4xl font-bold text-blue-600">DriverControl</h1>
           </div>
           <p className="text-muted-foreground">
             Gerencie seus ganhos e gastos como motorista
@@ -496,125 +342,6 @@ const Auth = () => {
               </TabsContent>
 
               <TabsContent value="signup">
-                {showOtpVerification ? (
-                  <div className="space-y-6">
-                    <div className="text-center space-y-3">
-                      <div className="flex justify-center">
-                        <div className="relative">
-                          <Shield className="h-16 w-16 text-primary" />
-                          <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1">
-                            <Mail className="h-4 w-4 text-white" />
-                          </div>
-                        </div>
-                      </div>
-                      <h3 className="text-lg font-semibold">Verificação de Segurança</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Enviamos um código de verificação para
-                      </p>
-                      <p className="text-sm font-medium text-primary">
-                        {pendingEmail}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Digite o código de 6 dígitos abaixo
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleOtpVerification} className="space-y-6">
-                      <div className="space-y-4">
-                        <Label className="text-center block font-medium">
-                          Código de Verificação
-                        </Label>
-                        <OTPInput
-                          length={6}
-                          value={otpCode}
-                          onChange={setOtpCode}
-                          disabled={isLoading}
-                          className="justify-center"
-                        />
-                        {otpCode.length === 6 && (
-                          <div className="flex justify-center">
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          </div>
-                        )}
-                      </div>
-
-                      <Button 
-                        type="submit" 
-                        className="w-full h-12"
-                        disabled={isLoading || otpCode.length !== 6}
-                      >
-                        {isLoading ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                            Verificando...
-                          </>
-                        ) : (
-                          'Verificar Código'
-                        )}
-                      </Button>
-                    </form>
-
-                    <div className="space-y-3 pt-4 border-t border-border/50">
-                      <div className="text-center space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                          Não recebeu o código?
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          onClick={handleResendOtp}
-                          disabled={isLoading || otpCountdown > 0}
-                          className="w-full"
-                        >
-                          {otpCountdown > 0 ? (
-                            <>
-                              <Clock className="h-4 w-4 mr-2" />
-                              Reenviar em {otpCountdown}s
-                            </>
-                          ) : isLoading ? (
-                            'Reenviando...'
-                          ) : (
-                            'Reenviar Código'
-                          )}
-                        </Button>
-                      </div>
-                      
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => {
-                          setShowOtpVerification(false);
-                          setOtpCode('');
-                          setPendingEmail('');
-                          setOtpCountdown(0);
-                        }}
-                        className="w-full text-muted-foreground"
-                      >
-                        ← Voltar ao Cadastro
-                      </Button>
-                    </div>
-                  </div>
-                ) : emailVerificationSent ? (
-                  <div className="text-center space-y-4">
-                    <div className="flex justify-center">
-                      <Mail className="h-16 w-16 text-primary" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold">Verifique seu email</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Enviamos um link de confirmação para <strong>{signupData.email}</strong>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Clique no link no email para ativar sua conta. Verifique também a pasta de spam.
-                      </p>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setEmailVerificationSent(false)}
-                      className="w-full"
-                    >
-                      Voltar ao cadastro
-                    </Button>
-                  </div>
-                ) : (
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signup-nome" className="flex items-center gap-2">
@@ -765,7 +492,6 @@ const Auth = () => {
                       {isLoading ? 'Criando conta...' : 'Criar conta'}
                     </Button>
                   </form>
-                )}
               </TabsContent>
             </Tabs>
           </CardContent>
