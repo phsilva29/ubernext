@@ -166,7 +166,7 @@ const Auth = () => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginData.email,
-        password: loginData.password,
+        password: loginData.password
       });
 
       if (error) {
@@ -180,6 +180,12 @@ const Auth = () => {
         setError('Email ainda não verificado. Solicite novo código via cadastro.');
         return;
       }
+
+      console.log('✅ Login realizado - Sessão configurada:', {
+        user: data.user.email,
+        session_expires: data.session?.expires_at,
+        refresh_token: data.session?.refresh_token ? 'Presente' : 'Ausente'
+      });
 
       toast({
         title: "Login realizado com sucesso!",
@@ -228,6 +234,26 @@ const Auth = () => {
     }
 
     try {
+      // Primeiro verificar se o email já existe
+      const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
+        email: signupData.email.toLowerCase().trim(),
+        password: 'fake-password-to-check-if-user-exists'
+      });
+
+      // Se não houve erro de "Invalid login credentials", significa que o email existe
+      if (checkError && !checkError.message.includes('Invalid login credentials')) {
+        setError('Erro ao verificar email: ' + checkError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      // Se existingUser tem dados, significa que o email já está cadastrado
+      if (existingUser?.user) {
+        setError('Este email já está cadastrado. Faça login ou use outro email.');
+        setIsLoading(false);
+        return;
+      }
+
       // Usar signInWithOtp para enviar código de 6 dígitos por email
       const { data, error } = await supabase.auth.signInWithOtp({
         email: signupData.email.toLowerCase().trim(),

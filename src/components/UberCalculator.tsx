@@ -459,7 +459,26 @@ const UberCalculator = ({ onDataUpdate, dashboardData }: UberCalculatorProps) =>
       }
     } catch (error) {
       console.error('Erro ao salvar viagem:', error);
-      alert('Erro ao salvar os dados da viagem');
+      
+      // Verificar se é erro de autenticação/sessão
+      if (error instanceof Error) {
+        if (error.message.includes('login') || 
+            error.message.includes('sessão') || 
+            error.message.includes('autenticado') ||
+            error.message.includes('permissão')) {
+          
+          alert(`${error.message}\n\nVocê será redirecionado para a página de login.`);
+          
+          // Redirecionar para login após 2 segundos
+          setTimeout(() => {
+            window.location.href = '/auth';
+          }, 2000);
+          
+          return;
+        }
+      }
+      
+      alert('Erro ao salvar os dados da viagem. Tente novamente.');
     }
   };
 

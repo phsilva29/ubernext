@@ -1,5 +1,6 @@
 import { Viagem, DadosDashboard } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { SessionManager } from '@/lib/SessionManager';
 import DespesaService from './DespesaService';
 
 class ViagemService {
@@ -16,10 +17,42 @@ class ViagemService {
   // Salvar uma nova viagem
   static async salvarViagem(viagem: Viagem): Promise<Viagem> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      console.log('🚀 Iniciando salvamento da viagem:', viagem);
+      
+      // Verificar e renovar sessão se necessário
+      const sessionValid = await SessionManager.ensureValidSession();
+      if (!sessionValid) {
+        console.error('❌ Sessão inválida ou expirada');
+        throw new Error('Sua sessão expirou. Faça login novamente.');
+      }
+      
+      // Verificar autenticação
+      const isAuth = await SessionManager.isAuthenticated();
+      if (!isAuth) {
+        console.error('❌ Usuário não autenticado');
+        throw new Error('Usuário não autenticado. Faça login para continuar.');
+      }
+      
+      // Obter dados do usuário
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('❌ Erro de autenticação:', authError);
+        throw new Error('Erro de autenticação. Faça login novamente.');
+      }
+      
+      if (!user) {
+        console.error('❌ Usuário não encontrado');
+        throw new Error('Usuário não autenticado. Faça login para continuar.');
+      }
+      
+      console.log('✅ Usuário autenticado:', { 
+        id: user.id, 
+        email: user.email
+      });
 
       this.validateViagemInput(viagem);
+      console.log('✅ Validação dos dados OK');
 
       const gastosCombustivel = (viagem.kmRodados / viagem.consumo) * viagem.precoGasolina;
       const lucroLiquido = viagem.valorGanho - gastosCombustivel;
@@ -29,18 +62,31 @@ class ViagemService {
         ? viagem.data 
         : viagem.data.toISOString().split('T')[0];
 
+      console.log('📊 Dados calculados:', {
+        gastosCombustivel,
+        lucroLiquido,
+        lucroKm,
+        viagemData
+      });
+
       // Verificar se já existe viagem para o mesmo dia (evita duplicidade)
+      console.log('🔍 Verificando se já existe viagem para a data:', viagemData);
       const { data: existing, error: existingError } = await supabase
         .from('viagens')
         .select('*')
         .eq('user_id', user.id)
         .eq('data', viagemData)
         .maybeSingle();
-      if (existingError && existingError.code !== 'PGRST116') throw existingError;
+      
+      if (existingError && existingError.code !== 'PGRST116') {
+        console.error('❌ Erro ao verificar viagem existente:', existingError);
+        throw new Error(`Erro ao verificar dados existentes: ${existingError.message}`);
+      }
 
       let data;
       let error;
       if (existing) {
+        console.log('🔄 Atualizando viagem existente:', existing.id);
         // Atualiza registro existente
         ({ data, error } = await supabase
           .from('viagens')
@@ -58,6 +104,7 @@ class ViagemService {
           .select()
           .single());
       } else {
+        console.log('✨ Criando nova viagem');
         ({ data, error } = await supabase
           .from('viagens')
           .insert([{
@@ -75,12 +122,46 @@ class ViagemService {
           .single());
       }
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro do Supabase:', error);
+        throw new Error(`Erro ao salvar no banco de dados: ${error.message}`);
+      }
 
+      console.log('✅ Viagem salva com sucesso:', data);
       return this.mapViagemFromDB(data);
     } catch (error) {
-      console.error('Erro ao salvar viagem:', error);
-      throw error;
+      console.error('💥 Erro ao salvar viagem:', error);
+      
+      if (error instanceof Error) {
+        // Erro específico de RLS
+        if (error.message.includes('row-level security policy')) {
+          console.error('🛡️ Violação de política RLS - usuário sem permissão');
+          throw new Error('Sua sessão expirou ou você não tem permissão. Faça login novamente.');
+        }
+        
+        if (error.message.includes('not authenticated') || error.message.includes('auth')) {
+          throw new Error('Sessão expirou. Faça login novamente.');
+        }
+        
+        if (error.message.includes('permission denied')) {
+          throw new Error('Sem permissão para salvar dados. Verifique sua conta.');
+        }
+        
+        if (error.message.includes('duplicate') || error.message.includes('unique')) {
+          throw new Error('Já existe uma viagem cadastrada para esta data.');
+        }
+        
+        // Se já é uma mensagem customizada nossa, mantenha
+        if (error.message.includes('Faça login') || 
+            error.message.includes('Sessão') || 
+            error.message.includes('autenticado')) {
+          throw error;
+        }
+        
+        throw error;
+      }
+      
+      throw new Error('Erro inesperado ao salvar viagem. Tente novamente.');
     }
   }
 
