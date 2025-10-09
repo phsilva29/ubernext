@@ -234,40 +234,7 @@ const Auth = () => {
     }
 
     try {
-      // Verificar se email já existe através de tentativa de login
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-        email: signupData.email.toLowerCase().trim(),
-        password: 'temp-check-password-' + Date.now()
-      });
-
-      // Se não deu erro de credenciais inválidas, significa que pode haver problema
-      if (loginError && !loginError.message.includes('Invalid login credentials')) {
-        setError('Erro ao verificar email. Tente novamente.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Se loginData.user existe, o email já está cadastrado
-      if (loginData?.user) {
-        setError('Este email já está cadastrado. Faça login ou use "Esqueci minha senha".');
-        setIsLoading(false);
-        return;
-      }
-
-      // Verificação adicional via reset de senha
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        signupData.email.toLowerCase().trim(),
-        { redirectTo: 'about:blank' }
-      );
-
-      // Se o reset não deu erro, o email provavelmente já existe
-      if (!resetError) {
-        setError('Este email já está cadastrado. Faça login ou use "Esqueci minha senha".');
-        setIsLoading(false);
-        return;
-      }
-
-      // Criar a conta
+      // Criar a conta diretamente - o Supabase já verifica duplicatas nativamente
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email.toLowerCase().trim(),
         password: signupData.password,
