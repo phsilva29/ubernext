@@ -1,6 +1,6 @@
 import { Viagem, DadosDashboard } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { SessionManager } from '@/lib/SessionManager';
+import { AuthValidator } from '@/lib/AuthValidator';
 import DespesaService from './DespesaService';
 
 class ViagemService {
@@ -17,42 +17,21 @@ class ViagemService {
   // Salvar uma nova viagem
   static async salvarViagem(viagem: Viagem): Promise<Viagem> {
     try {
-      console.log('🚀 Iniciando salvamento da viagem:', viagem);
+      // Validar autenticação
+      const authResult = await AuthValidator.validateUserAuth();
       
-      // Verificar e renovar sessão se necessário
-      const sessionValid = await SessionManager.ensureValidSession();
-      if (!sessionValid) {
-        console.error('❌ Sessão inválida ou expirada');
-        throw new Error('Sua sessão expirou. Faça login novamente.');
+      if (!authResult.isValid) {
+        if (authResult.error?.includes('sessão') || 
+            authResult.error?.includes('permissão') ||
+            authResult.error?.includes('Token')) {
+          await AuthValidator.forceLogout(authResult.error);
+          return Promise.reject(new Error(authResult.error));
+        }
+        throw new Error(authResult.error || 'Erro de autenticação');
       }
       
-      // Verificar autenticação
-      const isAuth = await SessionManager.isAuthenticated();
-      if (!isAuth) {
-        console.error('❌ Usuário não autenticado');
-        throw new Error('Usuário não autenticado. Faça login para continuar.');
-      }
-      
-      // Obter dados do usuário
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError) {
-        console.error('❌ Erro de autenticação:', authError);
-        throw new Error('Erro de autenticação. Faça login novamente.');
-      }
-      
-      if (!user) {
-        console.error('❌ Usuário não encontrado');
-        throw new Error('Usuário não autenticado. Faça login para continuar.');
-      }
-      
-      console.log('✅ Usuário autenticado:', { 
-        id: user.id, 
-        email: user.email
-      });
-
+      const user = authResult.user!;
       this.validateViagemInput(viagem);
-      console.log('✅ Validação dos dados OK');
 
       const gastosCombustivel = (viagem.kmRodados / viagem.consumo) * viagem.precoGasolina;
       const lucroLiquido = viagem.valorGanho - gastosCombustivel;
@@ -62,15 +41,7 @@ class ViagemService {
         ? viagem.data 
         : viagem.data.toISOString().split('T')[0];
 
-      console.log('📊 Dados calculados:', {
-        gastosCombustivel,
-        lucroLiquido,
-        lucroKm,
-        viagemData
-      });
-
-      // Verificar se já existe viagem para o mesmo dia (evita duplicidade)
-      console.log('🔍 Verificando se já existe viagem para a data:', viagemData);
+      // Verificar se já existe viagem para o mesmo dia
       const { data: existing, error: existingError } = await supabase
         .from('viagens')
         .select('*')
@@ -79,15 +50,14 @@ class ViagemService {
         .maybeSingle();
       
       if (existingError && existingError.code !== 'PGRST116') {
-        console.error('❌ Erro ao verificar viagem existente:', existingError);
         throw new Error(`Erro ao verificar dados existentes: ${existingError.message}`);
       }
 
       let data;
       let error;
+      
       if (existing) {
-        console.log('🔄 Atualizando viagem existente:', existing.id);
-        // Atualiza registro existente
+        // Atualizar registro existente
         ({ data, error } = await supabase
           .from('viagens')
           .update({
@@ -104,7 +74,7 @@ class ViagemService {
           .select()
           .single());
       } else {
-        console.log('✨ Criando nova viagem');
+        // Criar nova viagem
         ({ data, error } = await supabase
           .from('viagens')
           .insert([{
@@ -124,38 +94,48 @@ class ViagemService {
 
       if (error) {
         console.error('❌ Erro do Supabase:', error);
-        throw new Error(`Erro ao salvar no banco de dados: ${error.message}`);
+        console.error('Código do erro:', error.code);
+        console.error('Detalhes:', error.details);
+        console.error('Hint:', error.hint);
+        
+        // Tratar erros específicos
+        if (error.code === '42501' || error.message.includes('permission denied')) {
+          throw new Error('Erro de permissão. Sua sessão pode ter expirado. Faça login novamente.');
+        }
+        
+        if (error.code === '23505' || error.message.includes('duplicate')) {
+          throw new Error('Já existe uma viagem cadastrada para esta data.');
+        }
+        
+        if (error.code === '23503' || error.message.includes('foreign key')) {
+          throw new Error('Erro de referência de usuário. Faça login novamente.');
+        }
+        
+        if (error.message.includes('row-level security')) {
+          throw new Error('Sua sessão expirou ou você não tem permissão. Faça login novamente.');
+        }
+        
+        throw new Error(`Erro ao salvar no banco de dados: ${error.message} (Código: ${error.code})`);
       }
 
-      console.log('✅ Viagem salva com sucesso:', data);
       return this.mapViagemFromDB(data);
     } catch (error) {
-      console.error('💥 Erro ao salvar viagem:', error);
-      
       if (error instanceof Error) {
-        // Erro específico de RLS
-        if (error.message.includes('row-level security policy')) {
-          console.error('🛡️ Violação de política RLS - usuário sem permissão');
+        // Erro específico de RLS ou 403
+        if (error.message.includes('row-level security policy') ||
+            error.message.includes('permission denied') ||
+            error.message.includes('403')) {
+          await AuthValidator.forceLogout('Sua sessão expirou ou você não tem permissão. Faça login novamente.');
           throw new Error('Sua sessão expirou ou você não tem permissão. Faça login novamente.');
         }
         
         if (error.message.includes('not authenticated') || error.message.includes('auth')) {
+          await AuthValidator.forceLogout('Sessão expirou. Faça login novamente.');
           throw new Error('Sessão expirou. Faça login novamente.');
-        }
-        
-        if (error.message.includes('permission denied')) {
-          throw new Error('Sem permissão para salvar dados. Verifique sua conta.');
         }
         
         if (error.message.includes('duplicate') || error.message.includes('unique')) {
           throw new Error('Já existe uma viagem cadastrada para esta data.');
-        }
-        
-        // Se já é uma mensagem customizada nossa, mantenha
-        if (error.message.includes('Faça login') || 
-            error.message.includes('Sessão') || 
-            error.message.includes('autenticado')) {
-          throw error;
         }
         
         throw error;
