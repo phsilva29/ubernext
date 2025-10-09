@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface OTPInputProps {
   length?: number;
@@ -7,6 +7,7 @@ interface OTPInputProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   className?: string;
+  error?: boolean;
 }
 
 const OTPInput: React.FC<OTPInputProps> = ({ 
@@ -14,9 +15,11 @@ const OTPInput: React.FC<OTPInputProps> = ({
   value, 
   onChange, 
   disabled = false,
-  className = '' 
+  className = '',
+  error = false
 }) => {
   const [otp, setOtp] = useState<string[]>(new Array(length).fill(''));
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const inputRefs = useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
@@ -29,39 +32,68 @@ const OTPInput: React.FC<OTPInputProps> = ({
   }, [value, length]);
 
   const handleChange = (element: HTMLInputElement, index: number) => {
-    if (isNaN(Number(element.value))) return;
+    if (disabled) return;
+    
+    const inputValue = element.value.replace(/\D/g, ''); // Apenas números
+    
+    if (inputValue.length > 1) {
+      // Handle paste de múltiplos caracteres
+      const pastedData = inputValue.slice(0, length);
+      const newOtp = pastedData.split('');
+      while (newOtp.length < length) {
+        newOtp.push('');
+      }
+      setOtp(newOtp);
+      onChange(pastedData);
+      
+      // Focar no último campo preenchido
+      const nextIndex = Math.min(pastedData.length - 1, length - 1);
+      setTimeout(() => inputRefs.current[nextIndex]?.focus(), 0);
+      return;
+    }
 
     const newOtp = [...otp];
-    newOtp[index] = element.value;
+    newOtp[index] = inputValue;
     setOtp(newOtp);
-
-    // Chamar callback com valor completo
     onChange(newOtp.join(''));
 
-    // Focar no próximo campo se não estiver vazio
-    if (element.value !== '' && index < length - 1) {
-      inputRefs.current[index + 1]?.focus();
+    // Auto-navegar para próximo campo
+    if (inputValue !== '' && index < length - 1) {
+      setTimeout(() => inputRefs.current[index + 1]?.focus(), 0);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
-    // Backspace: ir para campo anterior se atual estiver vazio
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+    if (disabled) return;
+
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const newOtp = [...otp];
+      
+      if (otp[index]) {
+        // Se tem valor, limpar campo atual
+        newOtp[index] = '';
+        setOtp(newOtp);
+        onChange(newOtp.join(''));
+      } else if (index > 0) {
+        // Se não tem valor, ir para campo anterior e limpar
+        newOtp[index - 1] = '';
+        setOtp(newOtp);
+        onChange(newOtp.join(''));
+        inputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault();
       inputRefs.current[index - 1]?.focus();
-    }
-    // Delete: limpar campo atual
-    else if (e.key === 'Delete') {
+    } else if (e.key === 'ArrowRight' && index < length - 1) {
+      e.preventDefault();
+      inputRefs.current[index + 1]?.focus();
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
       const newOtp = [...otp];
       newOtp[index] = '';
       setOtp(newOtp);
       onChange(newOtp.join(''));
-    }
-    // Setas para navegação
-    else if (e.key === 'ArrowLeft' && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-    else if (e.key === 'ArrowRight' && index < length - 1) {
-      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -79,30 +111,70 @@ const OTPInput: React.FC<OTPInputProps> = ({
       
       // Focar no último campo preenchido ou no primeiro vazio
       const nextIndex = Math.min(pastedData.length, length - 1);
-      inputRefs.current[nextIndex]?.focus();
+      setTimeout(() => inputRefs.current[nextIndex]?.focus(), 0);
     }
   };
 
+  const handleFocus = (index: number) => {
+    setFocusedIndex(index);
+  };
+
+  const handleBlur = () => {
+    setFocusedIndex(-1);
+  };
+
   return (
-    <div className={`flex gap-2 justify-center ${className}`}>
+    <div className={cn("flex gap-3 justify-center items-center", className)}>
       {otp.map((digit, index) => (
-        <Input
-          key={index}
-          ref={(el) => {
-            if (el) inputRefs.current[index] = el;
-          }}
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          value={digit}
-          maxLength={1}
-          disabled={disabled}
-          className="w-12 h-12 text-center text-xl font-mono border-2 focus:border-primary"
-          onChange={(e) => handleChange(e.target, index)}
-          onKeyDown={(e) => handleKeyDown(e, index)}
-          onPaste={handlePaste}
-          onFocus={(e) => e.target.select()}
-        />
+        <div key={index} className="relative">
+          <input
+            ref={(el) => {
+              if (el) inputRefs.current[index] = el;
+            }}
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={digit}
+            maxLength={1}
+            disabled={disabled}
+            className={cn(
+              // Base styles - tema escuro elegante
+              "w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-center text-lg sm:text-xl md:text-2xl font-bold rounded-xl border-2 transition-all duration-300 ease-in-out",
+              "focus:outline-none focus:ring-0 backdrop-blur-sm shadow-lg",
+              // Normal state - tema escuro
+              {
+                "border-gray-700 bg-gray-800/90 text-gray-200 shadow-gray-900/20": !error && !disabled && focusedIndex !== index && !digit,
+                // Filled state - azul escuro elegante
+                "border-blue-500/70 bg-gradient-to-br from-blue-900/70 to-blue-800/70 text-blue-100 shadow-blue-900/40 transform scale-105": !error && !disabled && digit && focusedIndex !== index,
+                // Focused state - destaque azul brilhante
+                "border-blue-400 bg-gradient-to-br from-blue-900/80 to-blue-800/80 text-blue-100 shadow-xl ring-4 ring-blue-500/30 scale-110 transform": !error && !disabled && focusedIndex === index,
+                // Error state - vermelho escuro elegante
+                "border-red-500/70 bg-gradient-to-br from-red-900/70 to-red-800/70 text-red-100 shadow-red-900/40": error && !disabled && focusedIndex !== index,
+                "border-red-400 bg-gradient-to-br from-red-900/80 to-red-800/80 text-red-100 shadow-xl ring-4 ring-red-500/30 scale-110": error && !disabled && focusedIndex === index,
+                // Disabled state - cinza escuro
+                "border-gray-600 bg-gray-700/50 text-gray-500 cursor-not-allowed": disabled,
+              },
+              // Hover effects - brilho sutil
+              !disabled && focusedIndex !== index && "hover:border-blue-500/50 hover:bg-gray-750/90 hover:shadow-lg hover:scale-105 transform hover:shadow-blue-900/20"
+            )}
+            onChange={(e) => handleChange(e.target, index)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
+            onPaste={handlePaste}
+            onFocus={() => handleFocus(index)}
+            onBlur={handleBlur}
+            aria-label={`Dígito ${index + 1} do código de verificação`}
+          />
+          
+          {/* Indicador visual de preenchimento - tema escuro */}
+          {digit && (
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 pointer-events-none animate-pulse" />
+          )}
+          
+          {/* Efeito de brilho para campos preenchidos */}
+          {digit && focusedIndex !== index && (
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-400/10 to-transparent pointer-events-none" />
+          )}
+        </div>
       ))}
     </div>
   );

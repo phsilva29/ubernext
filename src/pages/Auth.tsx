@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Car, LogIn, UserPlus, Mail, Lock, User, CheckCircle, AlertCircle } from 'lucide-react';
+import EmailCodeVerify from '@/components/auth/EmailCodeVerify';
 
 // Função para validar email com regex mais rigorosa
 const validateEmail = (email: string): { isValid: boolean; message?: string } => {
@@ -65,6 +66,9 @@ const validatePassword = (password: string): { isValid: boolean; message?: strin
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  // Estados para verificação de email
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
   // Removidos estados de OTP/verificação
   const [emailValidation, setEmailValidation] = useState<{ isValid: boolean; message?: string }>({ isValid: true });
   const [passwordValidation, setPasswordValidation] = useState<{ isValid: boolean; message?: string; strength?: 'weak' | 'medium' | 'strong' }>({ isValid: true });
@@ -224,33 +228,83 @@ const Auth = () => {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Usar signInWithOtp para enviar código de 6 dígitos por email
+      const { data, error } = await supabase.auth.signInWithOtp({
         email: signupData.email.toLowerCase().trim(),
-        password: signupData.password,
-        options: { data: { nome: signupData.nome.trim() } }
+        options: { 
+          shouldCreateUser: true,
+          data: { 
+            nome: signupData.nome.trim(),
+            password: signupData.password // Armazenar temporariamente para criar a conta depois
+          }
+        }
       });
 
       if (error) {
-        console.error('❌ Erro ao cadastrar:', error);
-        if (error.message.includes('User already registered')) {
-          setError('Este email já está cadastrado. Tente fazer login.');
-        } else if (error.message.includes('Signups not allowed')) {
+        console.error('❌ Erro ao enviar código:', error);
+        if (error.message.includes('Signups not allowed')) {
           setError('Cadastro desabilitado.');
         } else {
-          setError('Erro ao cadastrar: ' + error.message);
+          setError('Erro ao enviar código: ' + error.message);
         }
         return;
       }
 
-      if (data.user) {
-        toast({ title: 'Conta criada!', description: 'Você já pode fazer login.' });
-      }
+      // Mostrar tela de verificação de código
+      setVerificationEmail(signupData.email);
+      setShowEmailVerification(true);
+      
+      toast({ 
+        title: 'Código enviado!', 
+        description: `Verifique seu email (${signupData.email}) e digite o código de 6 dígitos.` 
+      });
 
     } catch (err) {
       console.error('💥 Erro inesperado:', err);
       setError('Erro inesperado. Verifique sua conexão e tente novamente.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Função para lidar com verificação de código OTP bem-sucedida
+  const handleEmailVerified = async () => {
+    try {
+      // Após verificação OTP bem-sucedida, criar a conta com senha
+      const { data, error } = await supabase.auth.signUp({
+        email: signupData.email.toLowerCase().trim(),
+        password: signupData.password,
+        options: { 
+          data: { nome: signupData.nome.trim() }
+        }
+      });
+
+      if (error) {
+        console.error('❌ Erro ao finalizar cadastro:', error);
+        // Se a conta já existe, é porque o OTP foi verificado com sucesso
+        if (error.message.includes('User already registered')) {
+          toast({ 
+            title: '🎉 Cadastro concluído!', 
+            description: 'Email verificado com sucesso! Você pode fazer login agora.' 
+          });
+        } else {
+          setError('Erro ao finalizar cadastro: ' + error.message);
+          return;
+        }
+      } else {
+        toast({ 
+          title: '🎉 Cadastro concluído!', 
+          description: 'Conta criada e verificada com sucesso! Você pode fazer login agora.' 
+        });
+      }
+      
+      // Resetar formulário e voltar para login
+      setShowEmailVerification(false);
+      setSignupData({ nome: '', email: '', password: '', confirmPassword: '' });
+      
+    } catch (err) {
+      console.error('💥 Erro ao finalizar cadastro:', err);
+      setError('Erro inesperado ao finalizar cadastro.');
     }
   };
 
@@ -342,6 +396,7 @@ const Auth = () => {
               </TabsContent>
 
               <TabsContent value="signup">
+                {!showEmailVerification ? (
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signup-nome" className="flex items-center gap-2">
@@ -489,9 +544,28 @@ const Auth = () => {
                       className="w-full"
                       disabled={isLoading || !emailValidation.isValid || !passwordValidation.isValid || signupData.password !== signupData.confirmPassword}
                     >
-                      {isLoading ? 'Criando conta...' : 'Criar conta'}
+                      {isLoading ? 'Enviando código...' : 'Criar conta'}
                     </Button>
                   </form>
+                ) : (
+                  <div className="space-y-6 py-4">
+                    <EmailCodeVerify 
+                      email={verificationEmail} 
+                      onAuth={handleEmailVerified} 
+                    />
+                    
+                    <div className="text-center pt-4 border-t border-gray-700/50">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowEmailVerification(false)}
+                        className="text-gray-400 hover:text-gray-300 hover:bg-gray-800/50 text-sm font-medium border border-gray-600/30 hover:border-gray-500/50 backdrop-blur-sm transition-all duration-200"
+                      >
+                        ← Alterar dados do cadastro
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
