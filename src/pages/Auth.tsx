@@ -234,59 +234,89 @@ const Auth = () => {
     }
 
     try {
-      // Primeiro verificar se o email já existe
-      const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
+      // Verificar se email já existe através de tentativa de login
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
         email: signupData.email.toLowerCase().trim(),
-        password: 'fake-password-to-check-if-user-exists'
+        password: 'temp-check-password-' + Date.now()
       });
 
-      // Se não houve erro de "Invalid login credentials", significa que o email existe
-      if (checkError && !checkError.message.includes('Invalid login credentials')) {
-        setError('Erro ao verificar email: ' + checkError.message);
+      // Se não deu erro de credenciais inválidas, significa que pode haver problema
+      if (loginError && !loginError.message.includes('Invalid login credentials')) {
+        setError('Erro ao verificar email. Tente novamente.');
         setIsLoading(false);
         return;
       }
 
-      // Se existingUser tem dados, significa que o email já está cadastrado
-      if (existingUser?.user) {
-        setError('Este email já está cadastrado. Faça login ou use outro email.');
+      // Se loginData.user existe, o email já está cadastrado
+      if (loginData?.user) {
+        setError('Este email já está cadastrado. Faça login ou use "Esqueci minha senha".');
         setIsLoading(false);
         return;
       }
 
-      // Usar signInWithOtp para enviar código de 6 dígitos por email
-      const { data, error } = await supabase.auth.signInWithOtp({
+      // Verificação adicional via reset de senha
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        signupData.email.toLowerCase().trim(),
+        { redirectTo: 'about:blank' }
+      );
+
+      // Se o reset não deu erro, o email provavelmente já existe
+      if (!resetError) {
+        setError('Este email já está cadastrado. Faça login ou use "Esqueci minha senha".');
+        setIsLoading(false);
+        return;
+      }
+
+      // Criar a conta
+      const { data, error } = await supabase.auth.signUp({
         email: signupData.email.toLowerCase().trim(),
+        password: signupData.password,
         options: { 
-          shouldCreateUser: true,
-          data: { 
-            nome: signupData.nome.trim(),
-            password: signupData.password // Armazenar temporariamente para criar a conta depois
-          }
+          data: { nome: signupData.nome.trim() },
+          emailRedirectTo: undefined
         }
       });
 
       if (error) {
-        console.error('❌ Erro ao enviar código:', error);
-        if (error.message.includes('Signups not allowed')) {
-          setError('Cadastro desabilitado.');
+        if (error.message.includes('User already registered') || 
+            error.message.includes('already been registered') ||
+            error.message.includes('A user with this email address has already been registered')) {
+          setError('Este email já está cadastrado. Faça login ou use "Esqueci minha senha".');
+        } else if (error.message.includes('Signups not allowed')) {
+          setError('Cadastro desabilitado no momento.');
+        } else if (error.message.includes('Invalid email')) {
+          setError('Email inválido. Verifique e tente novamente.');
         } else {
-          setError('Erro ao enviar código: ' + error.message);
+          setError('Erro ao criar conta: ' + error.message);
         }
+        setIsLoading(false);
         return;
       }
 
-      // Mostrar tela de verificação de código
-      setVerificationEmail(signupData.email);
-      setShowEmailVerification(true);
-      
-      toast({ 
-        title: 'Código enviado!', 
-        description: `Verifique seu email (${signupData.email}) e digite o código de 6 dígitos.` 
-      });
+      if (!data.user) {
+        setError('Erro ao criar conta. Tente novamente.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Verificar se a conta precisa de confirmação por email
+      if (data.user && !data.user.email_confirmed_at) {
+        setVerificationEmail(signupData.email);
+        setShowEmailVerification(true);
+        
+        toast({ 
+          title: 'Código enviado!', 
+          description: `Verifique seu email (${signupData.email}) e digite o código de 6 dígitos.` 
+        });
+      } else if (data.user?.email_confirmed_at) {
+        toast({ 
+          title: '🎉 Cadastro concluído!', 
+          description: 'Conta criada com sucesso! Você pode fazer login agora.' 
+        });
+        setSignupData({ nome: '', email: '', password: '', confirmPassword: '' });
+      }
 
     } catch (err) {
-      console.error('💥 Erro inesperado:', err);
       setError('Erro inesperado. Verifique sua conexão e tente novamente.');
     } finally {
       setIsLoading(false);
@@ -296,33 +326,11 @@ const Auth = () => {
   // Função para lidar com verificação de código OTP bem-sucedida
   const handleEmailVerified = async () => {
     try {
-      // Após verificação OTP bem-sucedida, criar a conta com senha
-      const { data, error } = await supabase.auth.signUp({
-        email: signupData.email.toLowerCase().trim(),
-        password: signupData.password,
-        options: { 
-          data: { nome: signupData.nome.trim() }
-        }
+      // Como já usamos signUp no handleSignup, aqui só precisamos confirmar que está tudo certo
+      toast({ 
+        title: '🎉 Cadastro concluído!', 
+        description: 'Email verificado com sucesso! Você pode fazer login agora.' 
       });
-
-      if (error) {
-        console.error('❌ Erro ao finalizar cadastro:', error);
-        // Se a conta já existe, é porque o OTP foi verificado com sucesso
-        if (error.message.includes('User already registered')) {
-          toast({ 
-            title: '🎉 Cadastro concluído!', 
-            description: 'Email verificado com sucesso! Você pode fazer login agora.' 
-          });
-        } else {
-          setError('Erro ao finalizar cadastro: ' + error.message);
-          return;
-        }
-      } else {
-        toast({ 
-          title: '🎉 Cadastro concluído!', 
-          description: 'Conta criada e verificada com sucesso! Você pode fazer login agora.' 
-        });
-      }
       
       // Resetar formulário e voltar para login
       setShowEmailVerification(false);
