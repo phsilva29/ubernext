@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import UberCalculator from "@/components/UberCalculator";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, PiggyBank } from "lucide-react";
 import ViagemService from '@/services/ViagemService';
 import { DadosDashboard } from '@/types';
 
@@ -109,6 +109,14 @@ const Index = () => {
                 <User className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
                 <span className="truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px] md:max-w-[250px]">{user.email}</span>
               </div>
+              <Button
+                size="sm"
+                onClick={() => navigate('/finance')}
+                className="flex items-center gap-1.5 xs:gap-2 w-full xs:w-auto h-8 xs:h-9 sm:h-10 text-xs xs:text-sm sm:text-base px-3 xs:px-4 sm:px-6 bg-gradient-primary text-primary-foreground hover:brightness-110"
+              >
+                <PiggyBank className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                <span className="xs:inline">Controle Financeiro</span>
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

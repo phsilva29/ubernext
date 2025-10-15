@@ -125,6 +125,126 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_expenses: {
+        Row: {
+          id: string
+          user_id: string
+          type: "monthly" | "daily" | "debt"
+          title: string
+          amount: number
+          amount_paid: number
+          due_date: string
+          paid_date: string | null
+          category: string | null
+          installment_total: number | null
+          installment_paid: number | null
+          installment_amount: number | null
+          installment_start: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: "monthly" | "daily" | "debt"
+          title: string
+          amount: number
+          amount_paid?: number
+          due_date: string
+          paid_date?: string | null
+          category?: string | null
+          installment_total?: number | null
+          installment_paid?: number | null
+          installment_amount?: number | null
+          installment_start?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: "monthly" | "daily" | "debt"
+          title?: string
+          amount?: number
+          amount_paid?: number
+          due_date?: string
+          paid_date?: string | null
+          category?: string | null
+          installment_total?: number | null
+          installment_paid?: number | null
+          installment_amount?: number | null
+          installment_start?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      finance_history_entries: {
+        Row: {
+          id: string
+          user_id: string
+          period_key: string
+          period_label: string
+          period_start: string
+          period_end: string
+          totals_total: number
+          totals_paid: number
+          totals_pending: number
+          totals_overdue: number
+          snapshot: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          period_key: string
+          period_label: string
+          period_start: string
+          period_end: string
+          totals_total?: number
+          totals_paid?: number
+          totals_pending?: number
+          totals_overdue?: number
+          snapshot?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          period_key?: string
+          period_label?: string
+          period_start?: string
+          period_end?: string
+          totals_total?: number
+          totals_paid?: number
+          totals_pending?: number
+          totals_overdue?: number
+          snapshot?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      finance_state: {
+        Row: {
+          user_id: string
+          last_reset_month: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          last_reset_month: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          last_reset_month?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
