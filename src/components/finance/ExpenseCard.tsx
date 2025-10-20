@@ -75,19 +75,19 @@ export function ExpenseCard({
     switch (status) {
       case "paid":
         return (
-          <Badge className="bg-success/20 text-success border-success/40">
+          <Badge className="rounded-full border-2 border-success/40 bg-success/10 text-success">
             <Check className="mr-1 h-3 w-3" /> Pago
           </Badge>
         );
       case "overdue":
         return (
-          <Badge className="bg-destructive/20 text-destructive border-destructive/40">
+          <Badge className="rounded-full border-2 border-destructive/40 bg-destructive/10 text-destructive">
             <XCircle className="mr-1 h-3 w-3" /> Atrasado
           </Badge>
         );
       default:
         return (
-          <Badge className="bg-warning/20 text-warning border-warning/40">
+          <Badge className="rounded-full border-2 border-warning/40 bg-warning/10 text-warning">
             <Clock className="mr-1 h-3 w-3" /> Pendente
           </Badge>
         );
@@ -152,24 +152,24 @@ export function ExpenseCard({
   return (
     <Card
       className={cn(
-        "flex h-full flex-col gap-4 rounded-xl border border-border/50 bg-card/90 p-5 shadow-lg backdrop-blur-sm",
-        "transition-transform duration-200 hover:-translate-y-[2px] hover:shadow-2xl",
-        status === "paid" && "ring-1 ring-success/30",
-        status === "overdue" && "ring-1 ring-destructive/40"
+        "flex h-full flex-col gap-4 rounded-3xl border-2 border-border/40 bg-background/70 p-4 xs:p-5 shadow-xl backdrop-blur-sm",
+        "transition-transform duration-300 hover:-translate-y-[3px] hover:shadow-2xl",
+        status === "paid" && "ring-2 ring-success/30",
+        status === "overdue" && "ring-2 ring-destructive/40"
       )}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-          {category ? <p className="text-sm text-muted-foreground">{category}</p> : null}
+          <h3 className="text-base font-semibold text-foreground xs:text-lg">{title}</h3>
+          {category ? <p className="text-xs text-muted-foreground xs:text-sm">{category}</p> : null}
         </div>
         {renderStatus()}
       </div>
 
-      <div className="space-y-3 text-sm text-muted-foreground">
+      <div className="space-y-3 text-xs text-muted-foreground xs:text-sm">
         <div className="flex items-center justify-between">
           <span>Valor</span>
-          <span className="text-base font-semibold text-foreground">{formatCurrency(amount)}</span>
+          <span className="text-sm font-semibold text-foreground xs:text-base">{formatCurrency(amount)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span>{installment ? "Próxima parcela" : "Vencimento"}</span>
@@ -182,11 +182,11 @@ export function ExpenseCard({
           </div>
         ) : null}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-[11px] xs:text-xs">
             <span className="text-muted-foreground">Pago</span>
             <span className="font-medium text-success">{formatCurrency(Math.min(amountPaid, amount))}</span>
           </div>
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-[11px] xs:text-xs">
             <span className="text-muted-foreground">Restante</span>
             <span
               className={cn(
@@ -197,7 +197,7 @@ export function ExpenseCard({
               {formatCurrency(remaining)}
             </span>
           </div>
-          <Progress value={progress} className="h-2 bg-muted" />
+          <Progress value={progress} className="h-2 rounded-full bg-border/40" />
           {installment ? (
             <div className="mt-2 rounded-md border border-border/30 bg-muted/10 p-2 text-xs">
               <div className="flex items-center justify-between">
@@ -224,7 +224,7 @@ export function ExpenseCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-center rounded-lg border border-destructive/30 bg-destructive/10 text-destructive transition-colors hover:bg-destructive/15"
+                className="w-full justify-center rounded-xl border-2 border-destructive/30 bg-destructive/10 text-destructive transition-colors hover:bg-destructive/15"
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Excluir despesa
               </Button>
@@ -253,7 +253,7 @@ export function ExpenseCard({
             <Button
               variant="outline"
               size="sm"
-              className="w-full rounded-lg border-border/40 bg-secondary/40 text-foreground transition-colors hover:bg-secondary/60"
+              className="w-full rounded-xl border-2 border-border/40 bg-secondary/40 text-foreground transition-colors hover:bg-secondary/60"
             >
               Atualizar pagamento
             </Button>
@@ -292,7 +292,7 @@ export function ExpenseCard({
           <Button
             size="sm"
             variant="secondary"
-            className="w-full rounded-lg bg-secondary/60 text-foreground transition-colors hover:bg-secondary/70"
+            className="w-full rounded-xl bg-secondary/60 text-foreground transition-colors hover:bg-secondary/70"
             onClick={handleMarkInstallment}
           >
             <Clock className="mr-2 h-4 w-4" /> Registrar parcela paga
@@ -301,7 +301,7 @@ export function ExpenseCard({
         {remaining > 0 && onPaymentUpdate ? (
           <Button
             size="sm"
-            className="w-full rounded-lg bg-gradient-success text-success-foreground shadow-md hover:brightness-110"
+            className="w-full rounded-xl bg-gradient-success text-success-foreground shadow-md hover:brightness-110"
             onClick={() => onPaymentUpdate(amount)}
           >
             <Check className="mr-2 h-4 w-4" /> Quitar total

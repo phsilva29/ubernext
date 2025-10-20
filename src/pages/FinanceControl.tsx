@@ -128,9 +128,9 @@ const withStatus = (expense: Omit<Expense, "status">): Expense => ({
   status: getExpenseStatus(expense),
 });
 
-const CARD_BASE_CLASS = "rounded-xl border border-border/50 bg-card/90 shadow-lg backdrop-blur-sm";
-const CARD_INTERACTIVE_CLASS = `${CARD_BASE_CLASS} transition-transform duration-200 hover:-translate-y-[2px] hover:shadow-xl`;
-const CARD_MUTED_CLASS = "rounded-xl border border-dashed border-border/40 bg-muted/20";
+const CARD_BASE_CLASS = "rounded-2xl border-2 border-border/40 bg-card/95 shadow-lg backdrop-blur-sm";
+const CARD_INTERACTIVE_CLASS = `${CARD_BASE_CLASS} transition-all duration-200 hover:-translate-y-[2px] hover:shadow-xl hover:border-primary/40`;
+const CARD_MUTED_CLASS = "rounded-2xl border-2 border-dashed border-border/40 bg-muted/20";
 
 const getCurrentMonthKey = () => {
   const now = new Date();
@@ -883,70 +883,73 @@ export default function FinanceControl() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.12),transparent_55%)]">
-      <div className="border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <PiggyBank className="h-4 w-4 text-primary" />
-              <span>Controle financeiro integrado</span>
+    <div className="flex min-h-screen flex-col items-center bg-background p-1 xs:p-2 sm:p-4 md:p-6">
+      <Card className="w-full max-w-7xl rounded-3xl border-2 border-border/40 bg-card/95 p-2 xs:p-3 sm:p-6 md:p-8 lg:p-10 shadow-2xl">
+        <CardHeader className="space-y-4 border-b border-border/30 pb-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs xs:text-sm text-muted-foreground">
+                <PiggyBank className="h-4 w-4 text-primary" />
+                <span>Controle financeiro integrado</span>
+              </div>
+              <CardTitle className="text-2xl xs:text-3xl font-semibold text-foreground">
+                FinanceControl
+              </CardTitle>
+              <p className="text-xs xs:text-sm text-muted-foreground">
+                Análises financeiras, projeções e gestão de despesas para motoristas parceiro.
+              </p>
             </div>
-            <h1 className="text-3xl font-semibold text-foreground">FinanceControl</h1>
-            <p className="text-sm text-muted-foreground">
-              Análises financeiras, projeções e gestão de despesas para motoristas parceiro.
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                className="gap-2 rounded-xl border-2 border-border/40 bg-background/60 px-4 py-2 text-xs xs:text-sm text-foreground transition-all hover:border-primary/40 hover:bg-primary/10"
+                asChild
+              >
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4" /> Painel principal
+                </Link>
+              </Button>
+              <Button
+                variant="secondary"
+                className="gap-2 rounded-xl bg-primary/10 px-4 py-2 text-xs xs:text-sm text-primary"
+                disabled
+              >
+                {user.email}
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              className="gap-2 rounded-lg border-border/40 bg-card/70 text-foreground transition-colors hover:bg-card/60"
-              asChild
-            >
-              <Link to="/">
-                <ArrowLeft className="h-4 w-4" /> Painel principal
-              </Link>
-            </Button>
-            <Button
-              variant="secondary"
-              className="gap-2 rounded-lg bg-secondary/60 text-xs text-muted-foreground sm:text-sm"
-              disabled
-            >
-              {user.email}
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardHeader>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="w-full justify-start rounded-xl border border-border/40 bg-card/70 backdrop-blur-sm p-1">
-            <TabsTrigger
-              value="overview"
-              className="gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-            >
-              <LayoutDashboard className="h-4 w-4" /> Visão geral
-            </TabsTrigger>
-            <TabsTrigger
-              value="expenses"
-              className="gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-            >
-              <ClipboardList className="h-4 w-4" /> Despesas
-            </TabsTrigger>
-            <TabsTrigger
-              value="insights"
-              className="gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-            >
-              <TrendingUp className="h-4 w-4" /> Tendências
-            </TabsTrigger>
-            <TabsTrigger
-              value="history"
-              className="gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-            >
-              <History className="h-4 w-4" /> Histórico
-            </TabsTrigger>
-          </TabsList>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="overview" className="w-full space-y-8">
+            <TabsList className="flex w-full gap-0.5 rounded-lg border border-border/30 bg-background/60 p-0.5 shadow-sm backdrop-blur">
+              <TabsTrigger
+                value="overview"
+                className="flex flex-1 items-center justify-center gap-1 xs:gap-1.5 sm:gap-2 rounded-md px-1 xs:px-2 sm:px-4 py-1.5 xs:py-2 text-xs xs:text-sm font-medium transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5 xs:h-4 xs:w-4" /> Visão geral
+              </TabsTrigger>
+              <TabsTrigger
+                value="expenses"
+                className="flex flex-1 items-center justify-center gap-1 xs:gap-1.5 sm:gap-2 rounded-md px-1 xs:px-2 sm:px-4 py-1.5 xs:py-2 text-xs xs:text-sm font-medium transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <ClipboardList className="h-3.5 w-3.5 xs:h-4 xs:w-4" /> Despesas
+              </TabsTrigger>
+              <TabsTrigger
+                value="insights"
+                className="flex flex-1 items-center justify-center gap-1 xs:gap-1.5 sm:gap-2 rounded-md px-1 xs:px-2 sm:px-4 py-1.5 xs:py-2 text-xs xs:text-sm font-medium transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <TrendingUp className="h-3.5 w-3.5 xs:h-4 xs:w-4" /> Tendências
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="flex flex-1 items-center justify-center gap-1 xs:gap-1.5 sm:gap-2 rounded-md px-1 xs:px-2 sm:px-4 py-1.5 xs:py-2 text-xs xs:text-sm font-medium transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <History className="h-3.5 w-3.5 xs:h-4 xs:w-4" /> Histórico
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="overview" className="space-y-8">
+            <TabsContent value="overview" className="space-y-8">
             <FinancialSummary
               totalExpenses={totals.total}
               totalPaid={totals.paid}
@@ -954,8 +957,8 @@ export default function FinanceControl() {
               totalOverdue={totals.overdue}
             />
 
-            <div className="grid gap-6 lg:grid-cols-6">
-              <Card className={cn("lg:col-span-3", CARD_INTERACTIVE_CLASS)}>
+            <div className="grid grid-cols-1 gap-4 xs:gap-6 lg:grid-cols-6">
+              <Card className={cn("lg:col-span-3", CARD_INTERACTIVE_CLASS, "border-blue-400/40 bg-blue-500/10")}> 
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Coins className="h-5 w-5 text-primary" /> Distribuição por status
@@ -985,7 +988,7 @@ export default function FinanceControl() {
                 </CardContent>
               </Card>
 
-              <Card className={cn("lg:col-span-3", CARD_INTERACTIVE_CLASS)}>
+              <Card className={cn("lg:col-span-3", CARD_INTERACTIVE_CLASS, "border-amber-400/40 bg-amber-500/10")}> 
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <CalendarDays className="h-5 w-5 text-primary" /> Próximos vencimentos
@@ -997,10 +1000,10 @@ export default function FinanceControl() {
                       upcomingDues.map((expense) => (
                         <div
                           key={expense.id}
-                          className="flex items-center justify-between rounded-xl border border-border/40 bg-background/70 px-4 py-3 shadow-sm transition-transform duration-200 hover:-translate-y-[1px] hover:shadow-lg"
+                          className="flex flex-col gap-3 rounded-2xl border-2 border-border/40 bg-background/80 p-4 shadow-lg transition-transform duration-200 hover:-translate-y-[2px] hover:shadow-xl xs:flex-row xs:items-center xs:justify-between"
                         >
                           <div className="space-y-1">
-                            <p className="text-sm font-medium text-foreground">{expense.title}</p>
+                            <p className="text-sm font-semibold text-foreground">{expense.title}</p>
                             <p className="text-xs text-muted-foreground">
                               {expense.category ?? "Sem categoria"}
                               {expense.installment ? (
@@ -1010,7 +1013,7 @@ export default function FinanceControl() {
                               ) : null}
                             </p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left xs:text-right">
                             <p className="font-semibold text-foreground">
                               {formatCurrency(Math.max(expense.amount - expense.amountPaid, 0))}
                             </p>
@@ -1036,7 +1039,7 @@ export default function FinanceControl() {
               </Card>
             </div>
 
-            <Card className={CARD_INTERACTIVE_CLASS}>
+              <Card className={cn(CARD_INTERACTIVE_CLASS, "border-purple-400/40 bg-purple-500/10")}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <TrendingUp className="h-5 w-5 text-primary" /> Gastos por categoria
@@ -1070,13 +1073,13 @@ export default function FinanceControl() {
 
             <Separator className="border-border/40" />
 
-            <div className="space-y-10">
-              <section className="space-y-4">
+            <div className="space-y-6">
+              <section className="space-y-4 rounded-3xl border-2 border-border/40 bg-background/60 p-4 xs:p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-semibold text-foreground">Contas mensais</h3>
                   <AddExpenseDialog onAdd={(expense) => addExpense(setMonthlyBills, expense)} />
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 md:grid-cols-2 xl:grid-cols-3">
                   {monthlyBills.map((expense) => (
                     <ExpenseCard
                       key={expense.id}
@@ -1088,12 +1091,12 @@ export default function FinanceControl() {
                 </div>
               </section>
 
-              <section className="space-y-4">
+              <section className="space-y-4 rounded-3xl border-2 border-border/40 bg-background/60 p-4 xs:p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-semibold text-foreground">Gastos do dia a dia</h3>
                   <AddExpenseDialog onAdd={(expense) => addExpense(setDailyExpenses, expense)} />
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 md:grid-cols-2 xl:grid-cols-3">
                   {dailyExpenses.map((expense) => (
                     <ExpenseCard
                       key={expense.id}
@@ -1105,12 +1108,12 @@ export default function FinanceControl() {
                 </div>
               </section>
 
-              <section className="space-y-4">
+              <section className="space-y-4 rounded-3xl border-2 border-border/40 bg-background/60 p-4 xs:p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-semibold text-foreground">Dívidas e crédito</h3>
                   <AddExpenseDialog enableInstallments onAdd={(expense) => addExpense(setDebts, expense)} />
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 md:grid-cols-2 xl:grid-cols-3">
                   {debts.map((expense) => (
                     <ExpenseCard
                       key={expense.id}
@@ -1125,7 +1128,7 @@ export default function FinanceControl() {
           </TabsContent>
 
           <TabsContent value="insights" className="space-y-8">
-            <Card className={CARD_INTERACTIVE_CLASS}>
+            <Card className={cn(CARD_INTERACTIVE_CLASS, "border-sky-400/40 bg-sky-500/10")}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <TrendingUp className="h-5 w-5 text-primary" /> Evolução dos gastos
@@ -1144,7 +1147,7 @@ export default function FinanceControl() {
               </CardContent>
             </Card>
 
-            <Card className={CARD_INTERACTIVE_CLASS}>
+            <Card className={cn(CARD_INTERACTIVE_CLASS, "border-red-400/40 bg-red-500/10")}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <AlertTriangle className="h-5 w-5 text-warning" /> Alertas e recomendações
@@ -1176,7 +1179,7 @@ export default function FinanceControl() {
 
             <Separator className="border-border/40" />
 
-            <Card className={CARD_INTERACTIVE_CLASS}>
+            <Card className={cn(CARD_INTERACTIVE_CLASS, "border-primary/30 bg-primary/5")}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Filter className="h-5 w-5 text-primary" /> Filtros de período
@@ -1289,28 +1292,28 @@ export default function FinanceControl() {
 
                 <Separator className="border-dashed border-border/40" />
 
-                <div className="grid gap-4 lg:grid-cols-4">
-                  <div className="rounded-lg border border-border/40 bg-muted/30 p-4">
+                <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-2xl border-2 border-blue-400/40 bg-blue-500/10 p-4">
                     <p className="text-xs text-muted-foreground">Despesa total no período</p>
-                    <p className="text-xl font-semibold text-foreground">
+                    <p className="text-xl font-semibold text-blue-600">
                       {formatCurrency(historyAggregateTotals.total)}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-border/40 bg-muted/30 p-4">
+                  <div className="rounded-2xl border-2 border-emerald-400/40 bg-emerald-500/10 p-4">
                     <p className="text-xs text-muted-foreground">Valor liquidado</p>
-                    <p className="text-xl font-semibold text-success">
+                    <p className="text-xl font-semibold text-emerald-600">
                       {formatCurrency(historyAggregateTotals.paid)}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-border/40 bg-muted/30 p-4">
+                  <div className="rounded-2xl border-2 border-amber-400/40 bg-amber-500/10 p-4">
                     <p className="text-xs text-muted-foreground">Pendências</p>
-                    <p className="text-xl font-semibold text-warning">
+                    <p className="text-xl font-semibold text-amber-600">
                       {formatCurrency(historyAggregateTotals.pending)}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-border/40 bg-muted/30 p-4">
+                  <div className="rounded-2xl border-2 border-red-400/40 bg-red-500/10 p-4">
                     <p className="text-xs text-muted-foreground">Atrasos</p>
-                    <p className="text-xl font-semibold text-destructive">
+                    <p className="text-xl font-semibold text-red-600">
                       {formatCurrency(historyAggregateTotals.overdue)}
                     </p>
                   </div>
@@ -1365,7 +1368,7 @@ export default function FinanceControl() {
                       key={entry.id}
                       className={cn(
                         CARD_INTERACTIVE_CLASS,
-                        "border border-border/50 bg-background/80 shadow-lg hover:shadow-2xl"
+                        "border-primary/30 bg-background/90 shadow-2xl hover:shadow-3xl"
                       )}
                     >
                       <CardHeader>
@@ -1379,47 +1382,47 @@ export default function FinanceControl() {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        <div className="grid gap-4 md:grid-cols-4">
-                          <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                        <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 md:grid-cols-4">
+                          <div className="rounded-2xl border-2 border-blue-400/40 bg-blue-500/10 p-4">
                             <p className="text-xs text-muted-foreground">Despesas totais</p>
-                            <p className="text-lg font-semibold text-foreground">
+                            <p className="text-lg font-semibold text-blue-600">
                               {formatCurrency(entry.totals.total)}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                          <div className="rounded-2xl border-2 border-emerald-400/40 bg-emerald-500/10 p-4">
                             <p className="text-xs text-muted-foreground">Pagamentos efetuados</p>
-                            <p className="text-lg font-semibold text-success">
+                            <p className="text-lg font-semibold text-emerald-600">
                               {formatCurrency(entry.totals.paid)}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                          <div className="rounded-2xl border-2 border-amber-400/40 bg-amber-500/10 p-4">
                             <p className="text-xs text-muted-foreground">Restante</p>
-                            <p className="text-lg font-semibold text-warning">
+                            <p className="text-lg font-semibold text-amber-600">
                               {formatCurrency(entry.totals.pending)}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                          <div className="rounded-2xl border-2 border-red-400/40 bg-red-500/10 p-4">
                             <p className="text-xs text-muted-foreground">Atrasado</p>
-                            <p className="text-lg font-semibold text-destructive">
+                            <p className="text-lg font-semibold text-red-600">
                               {formatCurrency(entry.totals.overdue)}
                             </p>
                           </div>
                         </div>
 
-                        <div className="grid gap-4 md:grid-cols-3">
-                          <div className="rounded-lg border border-border/40 bg-muted/10 p-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <div className="rounded-2xl border-2 border-primary/30 bg-primary/10 p-4">
                             <p className="text-xs text-muted-foreground">Contas mensais</p>
                             <p className="text-lg font-semibold text-foreground">
                               {entry.monthlyBills.length}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/40 bg-muted/10 p-4">
+                          <div className="rounded-2xl border-2 border-secondary/30 bg-secondary/10 p-4">
                             <p className="text-xs text-muted-foreground">Gastos diários</p>
                             <p className="text-lg font-semibold text-foreground">
                               {entry.dailyExpenses.length}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/40 bg-muted/10 p-4">
+                          <div className="rounded-2xl border-2 border-purple-400/40 bg-purple-500/10 p-4">
                             <p className="text-xs text-muted-foreground">Dívidas</p>
                             <p className="text-lg font-semibold text-foreground">
                               {entry.debts.length}
@@ -1480,7 +1483,8 @@ export default function FinanceControl() {
             )}
           </TabsContent>
         </Tabs>
-      </main>
+        </CardContent>
+      </Card>
     </div>
   );
 }
