@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { FinanceExpense, FinanceHistoryEntry } from "@/types/finance";
 
 export type ExpenseType = "monthly" | "daily" | "debt";
@@ -33,26 +33,78 @@ const serializeExpenseForSnapshot = (expense: FinanceExpense) => ({
     : null,
 });
 
+const roundCurrency = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.round(value * 100) / 100;
+};
+
+const formatDateOnly = (date: Date) => date.toISOString().split("T")[0];
+
+type FinanceExpenseInsert = TablesInsert<"finance_expenses">;
+
 const mapExpenseToRecord = (
   expense: FinanceExpense,
   type: ExpenseType,
   userId: string
-): Omit<FinanceExpenseRecord, "id" | "created_at" | "updated_at"> => ({
+): FinanceExpenseInsert => ({
+  id: expense.id,
   user_id: userId,
   type,
   title: expense.title,
-  amount: expense.amount,
-  amount_paid: expense.amountPaid,
-  due_date: expense.dueDate.toISOString().split("T")[0],
-  paid_date: expense.paidDate ? expense.paidDate.toISOString().split("T")[0] : null,
+  amount: roundCurrency(expense.amount),
+  amount_paid: roundCurrency(expense.amountPaid),
+  due_date: formatDateOnly(expense.dueDate),
+  paid_date: expense.paidDate ? formatDateOnly(expense.paidDate) : null,
   category: expense.category ?? null,
   installment_total: expense.installment?.total ?? null,
   installment_paid: expense.installment?.paid ?? null,
-  installment_amount: expense.installment?.amount ?? null,
-  installment_start: expense.installment?.startDate
-    ? expense.installment.startDate.toISOString().split("T")[0]
-    : null,
+  installment_amount: expense.installment ? roundCurrency(expense.installment.amount) : null,
+  installment_start: expense.installment?.startDate ? formatDateOnly(expense.installment.startDate) : null,
 });
+
+// Cache avoids multiple round-trips when pruning stale expenses during bulk sync.
+const pruneRemovedExpenses = async (userId: string, keepIds: string[]) => {
+  const { data: existingRows, error: loadError } = await supabase
+    .from("finance_expenses")
+    .select("id")
+    .eq("user_id", userId);
+
+  if (loadError) {
+    throw loadError;
+  }
+
+  const existingIds = (existingRows ?? []).map((row) => row.id);
+  if (!existingIds.length) {
+    return;
+  }
+
+  if (!keepIds.length) {
+    const { error: deleteAllError } = await supabase
+      .from("finance_expenses")
+      .delete()
+      .eq("user_id", userId);
+
+    if (deleteAllError) {
+      throw deleteAllError;
+    }
+    return;
+  }
+
+  const keepLookup = new Set(keepIds);
+  const idsToDelete = existingIds.filter((id) => !keepLookup.has(id));
+
+  if (!idsToDelete.length) {
+    return;
+  }
+
+  const { error: deleteError } = await supabase.from("finance_expenses").delete().in("id", idsToDelete);
+  if (deleteError) {
+    throw deleteError;
+  }
+};
 
 export const FinanceService = {
   async loadExpenses() {
@@ -110,18 +162,27 @@ export const FinanceService = {
     if (userError) throw userError;
     if (!user) throw new Error("Usuário não autenticado");
 
-    await supabase.from("finance_expenses").delete().eq("user_id", user.id);
-
     const payload = [
       ...monthly.map((expense) => mapExpenseToRecord(expense, "monthly", user.id)),
       ...daily.map((expense) => mapExpenseToRecord(expense, "daily", user.id)),
       ...debts.map((expense) => mapExpenseToRecord(expense, "debt", user.id)),
     ];
 
+    const keepIds = payload
+      .map((record) => record.id)
+      .filter((id): id is string => Boolean(id));
+
     if (payload.length) {
-      const { error } = await supabase.from("finance_expenses").insert(payload);
-      if (error) throw error;
+      const { error: upsertError } = await supabase
+        .from("finance_expenses")
+        .upsert(payload, { onConflict: "id" });
+
+      if (upsertError) {
+        throw upsertError;
+      }
     }
+
+    await pruneRemovedExpenses(user.id, keepIds);
 
     const { error: upsertError } = await supabase
       .from("finance_state")
@@ -197,12 +258,21 @@ export const FinanceService = {
       ...debts.map((expense) => mapExpenseToRecord(expense, "debt", user.id)),
     ];
 
-    await supabase.from("finance_expenses").delete().eq("user_id", user.id);
+    const keepIds = payload
+      .map((record) => record.id)
+      .filter((id): id is string => Boolean(id));
 
     if (payload.length) {
-      const { error } = await supabase.from("finance_expenses").insert(payload);
-      if (error) throw error;
+      const { error: upsertError } = await supabase
+        .from("finance_expenses")
+        .upsert(payload, { onConflict: "id" });
+
+      if (upsertError) {
+        throw upsertError;
+      }
     }
+
+    await pruneRemovedExpenses(user.id, keepIds);
 
     const { error: upsertError } = await supabase
       .from("finance_state")
@@ -221,7 +291,6 @@ export const FinanceService = {
       .from("finance_expenses")
       .upsert({
         ...payload,
-        id: record.id,
       })
       .select()
       .single();
