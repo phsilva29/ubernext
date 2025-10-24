@@ -9,6 +9,7 @@ CREATE TABLE public.finance_expenses (
     due_date DATE NOT NULL,
     paid_date DATE,
     category TEXT,
+    archived_on DATE,
     installment_total INTEGER,
     installment_paid INTEGER,
     installment_amount NUMERIC(12, 2),
@@ -87,6 +88,7 @@ USING (auth.uid() = user_id);
 CREATE TABLE public.finance_state (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     last_reset_month TEXT NOT NULL,
+    last_daily_reset TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc', NOW()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc', NOW())
 );

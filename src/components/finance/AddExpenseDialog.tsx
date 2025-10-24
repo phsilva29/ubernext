@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -13,6 +15,8 @@ interface AddExpenseDialogProps {
     amount: number;
     dueDate: Date;
     category?: string;
+    subcategory?: string;
+    description?: string;
     amountPaid?: number;
     installment?: {
       total: number;
@@ -23,6 +27,8 @@ interface AddExpenseDialogProps {
   }) => void;
   category?: string;
   enableInstallments?: boolean;
+  categories?: string[];
+  subcategories?: Record<string, string[]>;
 }
 
 const calculateInstallmentAmount = (total: number, installments: number) => {
@@ -33,12 +39,69 @@ const calculateInstallmentAmount = (total: number, installments: number) => {
   return total / installments;
 };
 
-export function AddExpenseDialog({ onAdd, category, enableInstallments = false }: AddExpenseDialogProps) {
+const DEFAULT_CATEGORY_OPTION = "Outros";
+const DEFAULT_SUBCATEGORY_OPTION = "Outro";
+
+const DEFAULT_SUBCATEGORY_MAP: Record<string, string[]> = {
+  Alimentação: ["Mercado", "Restaurante", "Lanches", "Delivery"],
+  Combustível: ["Gasolina", "Etanol", "Diesel", "GNV"],
+  Manutenção: ["Troca de óleo", "Pneus", "Oficina", "Limpeza"],
+  Moradia: ["Água", "Luz", "Telefone", "Internet", "Aluguel", "Condomínio"],
+  Educação: ["Cursos", "Livros", "Material didático"],
+  Empréstimos: ["Parcelamento", "Financiamento", "Cartão de crédito"],
+  Saúde: ["Medicamentos", "Consultas", "Exames", "Plano de saúde"],
+  Serviços: ["Streaming", "Assinaturas", "Seguro", "Impostos"],
+  Dívidas: ["Cheque especial", "Cartão", "Empréstimo pessoal"],
+  "Gastos diários": ["Café", "Almoço", "Pedágio", "Estacionamento"],
+  Outros: [DEFAULT_SUBCATEGORY_OPTION],
+};
+
+export function AddExpenseDialog({
+  onAdd,
+  category,
+  enableInstallments = false,
+  categories = [
+    "Alimentação",
+    "Combustível",
+    "Manutenção",
+    "Moradia",
+    "Educação",
+    "Empréstimos",
+    "Saúde",
+    "Serviços",
+    DEFAULT_CATEGORY_OPTION,
+  ],
+  subcategories,
+}: AddExpenseDialogProps) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [categoryInput, setCategoryInput] = useState(category ?? "");
+  const [description, setDescription] = useState("");
+  const normalizedCategories = useMemo(() => {
+    const unique = new Set(categories.length ? categories : [DEFAULT_CATEGORY_OPTION]);
+    if (category) {
+      unique.add(category);
+    }
+    if (!unique.has(DEFAULT_CATEGORY_OPTION)) {
+      unique.add(DEFAULT_CATEGORY_OPTION);
+    }
+    return Array.from(unique);
+  }, [categories, category]);
+
+  const mergedSubcategoryMap = useMemo(() => {
+    return normalizedCategories.reduce<Record<string, string[]>>((acc, item) => {
+      const provided = subcategories?.[item];
+      const defaults = DEFAULT_SUBCATEGORY_MAP[item];
+      const options = provided ?? defaults ?? [DEFAULT_SUBCATEGORY_OPTION];
+      acc[item] = options.length ? options : [DEFAULT_SUBCATEGORY_OPTION];
+      return acc;
+    }, {});
+  }, [normalizedCategories, subcategories]);
+
+  const initialCategory = category ?? normalizedCategories[0] ?? DEFAULT_CATEGORY_OPTION;
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const initialSubcategory = (mergedSubcategoryMap[initialCategory] ?? [DEFAULT_SUBCATEGORY_OPTION])[0];
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>(initialSubcategory);
   const [amountPaid, setAmountPaid] = useState("");
   const [isInstallment, setIsInstallment] = useState(false);
   const [installmentsCount, setInstallmentsCount] = useState("2");
@@ -57,13 +120,16 @@ export function AddExpenseDialog({ onAdd, category, enableInstallments = false }
   };
 
   const resetForm = () => {
-    setTitle("");
     setAmount("");
     setDueDate("");
-    setCategoryInput(category ?? "");
+    const baseCategory = category ?? normalizedCategories[0] ?? DEFAULT_CATEGORY_OPTION;
+    setSelectedCategory(baseCategory);
+    const baseSubcategory = (mergedSubcategoryMap[baseCategory] ?? [DEFAULT_SUBCATEGORY_OPTION])[0];
+    setSelectedSubcategory(baseSubcategory);
     setAmountPaid("");
     setIsInstallment(false);
     setInstallmentsCount("2");
+    setDescription("");
   };
 
   const handleDialogChange = (nextOpen: boolean) => {
@@ -71,14 +137,18 @@ export function AddExpenseDialog({ onAdd, category, enableInstallments = false }
     if (!nextOpen) {
       resetForm();
     } else {
-      setCategoryInput(category ?? "");
+      const baseCategory = category ?? normalizedCategories[0] ?? DEFAULT_CATEGORY_OPTION;
+      setSelectedCategory(baseCategory);
+      const baseSubcategory = (mergedSubcategoryMap[baseCategory] ?? [DEFAULT_SUBCATEGORY_OPTION])[0];
+      setSelectedSubcategory(baseSubcategory);
+      setDescription("");
     }
   };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!title.trim() || !amount.trim() || !dueDate.trim()) {
+    if (!selectedSubcategory || !amount.trim() || !dueDate.trim()) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -146,10 +216,12 @@ export function AddExpenseDialog({ onAdd, category, enableInstallments = false }
       };
 
       onAdd({
-        title: title.trim(),
+        title: selectedSubcategory,
         amount: numericAmount,
         dueDate: startDate,
-        category: categoryInput.trim() || undefined,
+        category: selectedCategory === DEFAULT_CATEGORY_OPTION ? undefined : selectedCategory,
+        subcategory: selectedSubcategory,
+        description: description.trim() ? description.trim() : undefined,
         amountPaid: parsedAmountPaid,
         installment: installmentPayload,
       });
@@ -161,10 +233,12 @@ export function AddExpenseDialog({ onAdd, category, enableInstallments = false }
     }
 
     onAdd({
-      title: title.trim(),
+      title: selectedSubcategory,
       amount: numericAmount,
       dueDate: new Date(dueDate),
-      category: categoryInput.trim() || undefined,
+      category: selectedCategory === DEFAULT_CATEGORY_OPTION ? undefined : selectedCategory,
+      subcategory: selectedSubcategory,
+      description: description.trim() ? description.trim() : undefined,
       amountPaid: parsedAmountPaid,
     });
 
@@ -185,15 +259,48 @@ export function AddExpenseDialog({ onAdd, category, enableInstallments = false }
           <DialogTitle>Adicionar nova despesa</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!category ? (
+            <div className="space-y-2">
+              <Label htmlFor="expense-category">Categoria *</Label>
+              <Select
+                value={selectedCategory}
+                onValueChange={(value) => {
+                  setSelectedCategory(value);
+                  const nextSubcategory = (mergedSubcategoryMap[value] ?? [DEFAULT_SUBCATEGORY_OPTION])[0];
+                  setSelectedSubcategory(nextSubcategory);
+                }}
+              >
+                <SelectTrigger id="expense-category" className="h-10">
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {normalizedCategories.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
           <div className="space-y-2">
-            <Label htmlFor="expense-title">Descrição *</Label>
-            <Input
-              id="expense-title"
-              placeholder="Ex: Conta de Luz"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              required
-            />
+            <Label htmlFor="expense-subcategory">Subcategoria *</Label>
+            <Select
+              value={selectedSubcategory}
+              onValueChange={(value) => setSelectedSubcategory(value)}
+            >
+              <SelectTrigger id="expense-subcategory" className="h-10">
+                <SelectValue placeholder="Escolha uma subcategoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {(mergedSubcategoryMap[selectedCategory] ?? [DEFAULT_SUBCATEGORY_OPTION]).map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -217,6 +324,17 @@ export function AddExpenseDialog({ onAdd, category, enableInstallments = false }
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="expense-description">Descrição</Label>
+            <Textarea
+              id="expense-description"
+              placeholder="Observações adicionais"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={3}
+            />
           </div>
 
           <div className="space-y-2">
@@ -277,18 +395,6 @@ export function AddExpenseDialog({ onAdd, category, enableInstallments = false }
                   ) : null}
                 </div>
               ) : null}
-            </div>
-          ) : null}
-
-          {!category ? (
-            <div className="space-y-2">
-              <Label htmlFor="expense-category">Categoria (opcional)</Label>
-              <Input
-                id="expense-category"
-                placeholder="Ex: Moradia, Alimentação"
-                value={categoryInput}
-                onChange={(event) => setCategoryInput(event.target.value)}
-              />
             </div>
           ) : null}
 

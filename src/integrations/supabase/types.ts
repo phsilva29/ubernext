@@ -136,6 +136,9 @@ export type Database = {
           due_date: string
           paid_date: string | null
           category: string | null
+          subcategory: string | null
+          description: string | null
+          archived_on: string | null
           installment_total: number | null
           installment_paid: number | null
           installment_amount: number | null
@@ -153,6 +156,9 @@ export type Database = {
           due_date: string
           paid_date?: string | null
           category?: string | null
+          subcategory?: string | null
+          description?: string | null
+          archived_on?: string | null
           installment_total?: number | null
           installment_paid?: number | null
           installment_amount?: number | null
@@ -170,6 +176,9 @@ export type Database = {
           due_date?: string
           paid_date?: string | null
           category?: string | null
+          subcategory?: string | null
+          description?: string | null
+          archived_on?: string | null
           installment_total?: number | null
           installment_paid?: number | null
           installment_amount?: number | null
@@ -228,18 +237,21 @@ export type Database = {
         Row: {
           user_id: string
           last_reset_month: string
+          last_daily_reset: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           user_id: string
           last_reset_month: string
+          last_daily_reset?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           user_id?: string
           last_reset_month?: string
+          last_daily_reset?: string | null
           created_at?: string
           updated_at?: string
         }

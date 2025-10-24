@@ -16,6 +16,9 @@ export interface FinanceExpense {
   paidDate?: Date;
   status: ExpenseStatus;
   category?: string;
+  subcategory?: string;
+  description?: string;
+  archivedOn?: Date;
   installment?: InstallmentPlan;
 }
 

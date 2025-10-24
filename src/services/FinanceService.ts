@@ -23,6 +23,9 @@ const serializeExpenseForSnapshot = (expense: FinanceExpense) => ({
   paidDate: expense.paidDate ? expense.paidDate.toISOString() : null,
   status: expense.status,
   category: expense.category ?? null,
+  subcategory: expense.subcategory ?? null,
+  description: expense.description ?? null,
+  archivedOn: expense.archivedOn ? expense.archivedOn.toISOString() : null,
   installment: expense.installment
     ? {
         total: expense.installment.total,
@@ -59,6 +62,9 @@ const mapExpenseToRecord = (
   due_date: formatDateOnly(expense.dueDate),
   paid_date: expense.paidDate ? formatDateOnly(expense.paidDate) : null,
   category: expense.category ?? null,
+  subcategory: expense.subcategory ?? null,
+  description: expense.description ?? null,
+  archived_on: expense.archivedOn ? formatDateOnly(expense.archivedOn) : null,
   installment_total: expense.installment?.total ?? null,
   installment_paid: expense.installment?.paid ?? null,
   installment_amount: expense.installment ? roundCurrency(expense.installment.amount) : null,
@@ -100,7 +106,11 @@ const pruneRemovedExpenses = async (userId: string, keepIds: string[]) => {
     return;
   }
 
-  const { error: deleteError } = await supabase.from("finance_expenses").delete().in("id", idsToDelete);
+  const { error: deleteError } = await supabase
+    .from("finance_expenses")
+    .delete()
+    .eq("user_id", userId)
+    .in("id", idsToDelete);
   if (deleteError) {
     throw deleteError;
   }
@@ -110,7 +120,12 @@ export const FinanceService = {
   async loadExpenses() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
-    if (!user) return { expenses: [] as FinanceExpenseRecord[], lastResetMonth: null };
+    if (!user) {
+      return {
+        expenses: [] as FinanceExpenseRecord[],
+        state: { last_reset_month: null, last_daily_reset: null } as Partial<FinanceStateRecord>,
+      };
+    }
 
     const { data, error } = await supabase
       .from("finance_expenses")
@@ -122,7 +137,7 @@ export const FinanceService = {
 
     return {
       expenses: data ?? [],
-      lastResetMonth: await this.loadLastResetMonth(user.id),
+      state: await this.loadFinanceState(user.id),
     };
   },
 
@@ -141,22 +156,23 @@ export const FinanceService = {
     return data ?? [];
   },
 
-  async loadLastResetMonth(userId: string) {
+  async loadFinanceState(userId: string) {
     const { data, error } = await supabase
       .from("finance_state")
-      .select("last_reset_month")
+      .select("last_reset_month, last_daily_reset")
       .eq("user_id", userId)
       .maybeSingle();
 
     if (error) throw error;
-    return data?.last_reset_month ?? null;
+    return data ?? { last_reset_month: null, last_daily_reset: null };
   },
 
   async persistExpenses(
     monthly: FinanceExpense[],
     daily: FinanceExpense[],
     debts: FinanceExpense[],
-    lastResetMonth: string
+    lastResetMonth: string,
+    lastDailyReset: string
   ) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
@@ -186,7 +202,14 @@ export const FinanceService = {
 
     const { error: upsertError } = await supabase
       .from("finance_state")
-      .upsert({ user_id: user.id, last_reset_month: lastResetMonth }, { onConflict: "user_id" });
+      .upsert(
+        {
+          user_id: user.id,
+          last_reset_month: lastResetMonth,
+          last_daily_reset: lastDailyReset,
+        },
+        { onConflict: "user_id" }
+      );
 
     if (upsertError) throw upsertError;
   },
@@ -246,7 +269,8 @@ export const FinanceService = {
     monthly: FinanceExpense[],
     daily: FinanceExpense[],
     debts: FinanceExpense[],
-    lastResetMonth: string
+    lastResetMonth: string,
+    lastDailyReset: string
   ) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
@@ -276,7 +300,14 @@ export const FinanceService = {
 
     const { error: upsertError } = await supabase
       .from("finance_state")
-      .upsert({ user_id: user.id, last_reset_month: lastResetMonth }, { onConflict: "user_id" });
+      .upsert(
+        {
+          user_id: user.id,
+          last_reset_month: lastResetMonth,
+          last_daily_reset: lastDailyReset,
+        },
+        { onConflict: "user_id" }
+      );
 
     if (upsertError) throw upsertError;
   },

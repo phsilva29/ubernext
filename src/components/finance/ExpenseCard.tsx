@@ -19,6 +19,8 @@ interface ExpenseCardProps {
   paidDate?: Date;
   status: ExpenseStatus;
   category?: string;
+  subcategory?: string;
+  description?: string;
   amountPaid: number;
   onPaymentUpdate?: (amountPaid: number) => void;
   installment?: {
@@ -50,6 +52,8 @@ export function ExpenseCard({
   paidDate,
   status,
   category,
+  subcategory,
+  description,
   amountPaid,
   installment,
   onPaymentUpdate,
@@ -161,10 +165,20 @@ export function ExpenseCard({
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h3 className="text-base font-semibold text-foreground xs:text-lg">{title}</h3>
-          {category ? <p className="text-xs text-muted-foreground xs:text-sm">{category}</p> : null}
+          {category || subcategory ? (
+            <p className="text-xs text-muted-foreground xs:text-sm">
+              {category ? <span>{category}</span> : null}
+              {category && subcategory ? <span className="px-1">•</span> : null}
+              {subcategory ? <span>{subcategory}</span> : null}
+            </p>
+          ) : null}
         </div>
         {renderStatus()}
       </div>
+
+      {description ? (
+        <p className="mt-1 text-xs text-muted-foreground/80 xs:text-sm">{description}</p>
+      ) : null}
 
       <div className="space-y-3 text-xs text-muted-foreground xs:text-sm">
         <div className="flex items-center justify-between">

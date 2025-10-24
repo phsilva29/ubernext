@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FinancialSummary } from "@/components/finance/FinancialSummary";
 import { ExpenseCard } from "@/components/finance/ExpenseCard";
 import { AddExpenseDialog } from "@/components/finance/AddExpenseDialog";
@@ -54,6 +55,8 @@ type NewExpensePayload = {
   amount: number;
   dueDate: Date;
   category?: string;
+  subcategory?: string;
+  description?: string;
   amountPaid?: number;
   installment?: InstallmentPlan;
 };
@@ -66,6 +69,7 @@ interface FinanceRuntimeState {
   debts: Expense[];
   history: ExpenseHistoryEntry[];
   lastResetMonth: string;
+  lastDailyReset: string;
 }
 
 const formatCurrency = (value: number) =>
@@ -137,6 +141,17 @@ const getCurrentMonthKey = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 };
 
+const getDayKey = (date: Date = new Date()) => {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy.toISOString().split("T")[0];
+};
+
+const getMonthKeyFromDate = (date: Date) => {
+  const target = new Date(date.getTime());
+  return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}`;
+};
+
 const parseMonthKey = (key: string) => {
   const [yearString, monthString] = key.split("-");
   const year = Number(yearString);
@@ -174,6 +189,9 @@ const cloneExpense = (expense: Expense): Expense => ({
   ...expense,
   dueDate: new Date(expense.dueDate),
   paidDate: expense.paidDate ? new Date(expense.paidDate) : undefined,
+  archivedOn: expense.archivedOn ? new Date(expense.archivedOn) : undefined,
+  subcategory: expense.subcategory,
+  description: expense.description,
   installment: expense.installment
     ? {
         ...expense.installment,
@@ -245,6 +263,9 @@ type SnapshotExpensePayload = {
   paidDate: string | null;
   status: ExpenseStatus;
   category: string | null;
+  subcategory: string | null;
+  description: string | null;
+  archivedOn?: string | null;
   installment: SnapshotInstallmentPayload | null;
 };
 
@@ -273,6 +294,9 @@ const mapRecordToExpense = (record: FinanceExpenseRecord): Expense => {
     dueDate: new Date(record.due_date),
     paidDate: dateFrom(record.paid_date ?? undefined),
     category: record.category ?? undefined,
+  subcategory: record.subcategory ?? undefined,
+  description: record.description ?? undefined,
+    archivedOn: dateFrom(record.archived_on ?? undefined),
     installment: record.installment_total
       ? {
           total: record.installment_total,
@@ -319,6 +343,9 @@ const mapSnapshotExpense = (raw: unknown): Expense | null => {
       payload.status ??
       getExpenseStatus({ amount: numberFrom(payload.amount), amountPaid: numberFrom(payload.amountPaid), dueDate }),
     category: payload.category ?? undefined,
+  subcategory: payload.subcategory ?? undefined,
+  description: payload.description ?? undefined,
+    archivedOn: payload.archivedOn ? dateFrom(payload.archivedOn) : undefined,
     installment,
   };
 };
@@ -401,16 +428,21 @@ const runMonthlyResetOnState = (state: FinanceRuntimeState, nextMonthKey: string
     })
   );
 
-  const resetDailyExpenses: Expense[] = [];
+  const normalizedDailyExpenses = state.dailyExpenses.map((expense) =>
+    normalizeExpenseWithInstallment({
+      ...expense,
+    })
+  );
 
   const normalizedDebts = state.debts.map((expense) => normalizeExpenseWithInstallment({ ...expense }));
 
   return {
     monthlyBills: resetMonthlyBills,
-    dailyExpenses: resetDailyExpenses,
+    dailyExpenses: normalizedDailyExpenses,
     debts: normalizedDebts,
     history: historyEntry ? [...state.history, historyEntry] : [...state.history],
     lastResetMonth: nextMonthKey,
+    lastDailyReset: state.lastDailyReset,
   };
 };
 
@@ -429,12 +461,15 @@ export default function FinanceControl() {
   const [debts, setDebts] = useState<Expense[]>([]);
   const [historyEntries, setHistoryEntries] = useState<ExpenseHistoryEntry[]>([]);
   const [lastResetMonth, setLastResetMonth] = useState<string>(getCurrentMonthKey());
+  const [lastDailyReset, setLastDailyReset] = useState<string>(getDayKey());
   const [isHydrated, setIsHydrated] = useState(false);
   const [historyPeriod, setHistoryPeriod] = useState<HistoryFilterOption>("ultimo-ano");
   const [historyStartDate, setHistoryStartDate] = useState<Date | undefined>(undefined);
   const [historyEndDate, setHistoryEndDate] = useState<Date | undefined>(undefined);
   const [historyStartOpen, setHistoryStartOpen] = useState(false);
   const [historyEndOpen, setHistoryEndOpen] = useState(false);
+  const [dailyManagerOpen, setDailyManagerOpen] = useState(false);
+  const [dailyManagerDate, setDailyManagerDate] = useState<Date>(new Date());
 
   const executeMonthlyReset = useCallback(
     (targetMonthKey?: string) => {
@@ -445,6 +480,7 @@ export default function FinanceControl() {
         debts,
         history: historyEntries,
         lastResetMonth,
+        lastDailyReset,
       };
       const resetState = runMonthlyResetOnState(runtimeState, nextMonthKey);
       setMonthlyBills(resetState.monthlyBills);
@@ -452,8 +488,9 @@ export default function FinanceControl() {
       setDebts(resetState.debts);
       setHistoryEntries(resetState.history);
       setLastResetMonth(resetState.lastResetMonth);
+      setLastDailyReset(resetState.lastDailyReset);
     },
-    [monthlyBills, dailyExpenses, debts, historyEntries, lastResetMonth]
+    [monthlyBills, dailyExpenses, debts, historyEntries, lastResetMonth, lastDailyReset]
   );
 
   const ensureCurrentMonth = useCallback(() => {
@@ -466,6 +503,36 @@ export default function FinanceControl() {
       executeMonthlyReset(currentMonthKey);
     }
   }, [executeMonthlyReset, isHydrated, lastResetMonth]);
+
+  const ensureCurrentDay = useCallback(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    const todayKey = getDayKey();
+    if (todayKey === lastDailyReset) {
+      return;
+    }
+
+    const previousResetDate = new Date(lastDailyReset);
+    previousResetDate.setHours(0, 0, 0, 0);
+
+    setDailyExpenses((current) =>
+      current.map((expense) => {
+        if (expense.archivedOn) {
+          return expense;
+        }
+
+        const { status: _status, ...rest } = expense;
+        return normalizeExpenseWithInstallment({
+          ...rest,
+          archivedOn: new Date(previousResetDate),
+        });
+      })
+    );
+
+    setLastDailyReset(todayKey);
+  }, [isHydrated, lastDailyReset]);
 
   useEffect(() => {
     if (isLoading) {
@@ -520,7 +587,8 @@ export default function FinanceControl() {
           dailyExpenses: nextDaily,
           debts: nextDebts,
           history: nextHistory,
-          lastResetMonth: expenseResponse.lastResetMonth ?? getCurrentMonthKey(),
+          lastResetMonth: expenseResponse.state?.last_reset_month ?? getCurrentMonthKey(),
+          lastDailyReset: expenseResponse.state?.last_daily_reset ?? getDayKey(),
         };
 
         const currentMonthKey = getCurrentMonthKey();
@@ -537,6 +605,7 @@ export default function FinanceControl() {
         setDebts(runtimeState.debts);
         setHistoryEntries(runtimeState.history);
         setLastResetMonth(runtimeState.lastResetMonth);
+        setLastDailyReset(runtimeState.lastDailyReset);
       } catch (error) {
         console.error("Falha ao carregar dados financeiros do Supabase", error);
         if (!isActive) {
@@ -547,6 +616,7 @@ export default function FinanceControl() {
         setDebts([]);
         setHistoryEntries([]);
         setLastResetMonth(getCurrentMonthKey());
+        setLastDailyReset(getDayKey());
       } finally {
         if (isActive) {
           setIsHydrated(true);
@@ -573,20 +643,28 @@ export default function FinanceControl() {
   }, [executeMonthlyReset, isHydrated, lastResetMonth]);
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    ensureCurrentDay();
+  }, [ensureCurrentDay, isHydrated]);
+
+  useEffect(() => {
     if (!isHydrated || !user) {
       return;
     }
 
     const persistExpenses = async () => {
       try {
-        await FinanceService.replaceExpenses(monthlyBills, dailyExpenses, debts, lastResetMonth);
+  await FinanceService.replaceExpenses(monthlyBills, dailyExpenses, debts, lastResetMonth, lastDailyReset);
       } catch (error) {
         console.error("Falha ao sincronizar despesas com o Supabase", error);
       }
     };
 
     void persistExpenses();
-  }, [debts, dailyExpenses, monthlyBills, lastResetMonth, isHydrated, user]);
+  }, [debts, dailyExpenses, monthlyBills, lastResetMonth, lastDailyReset, isHydrated, user]);
 
   useEffect(() => {
     if (!isHydrated || !user) {
@@ -665,12 +743,94 @@ export default function FinanceControl() {
     [allExpenses]
   );
 
-  const filteredHistoryEntries = useMemo(() => {
-    if (!historyEntries.length) {
+  const expenseDerivedHistory = useMemo(() => {
+    if (!isHydrated) {
       return [] as ExpenseHistoryEntry[];
     }
 
-    const sorted = [...historyEntries].sort(
+    const buckets = new Map<
+      string,
+      { monthlyBills: Expense[]; dailyExpenses: Expense[]; debts: Expense[] }
+    >();
+
+    const registerExpense = (type: "monthlyBills" | "dailyExpenses" | "debts", expense: Expense) => {
+      const monthKey = getMonthKeyFromDate(expense.dueDate);
+      if (!buckets.has(monthKey)) {
+        buckets.set(monthKey, { monthlyBills: [], dailyExpenses: [], debts: [] });
+      }
+      const bucket = buckets.get(monthKey)!;
+      bucket[type].push(cloneExpense(expense));
+    };
+
+    monthlyBills.forEach((expense) => registerExpense("monthlyBills", expense));
+    dailyExpenses.forEach((expense) => registerExpense("dailyExpenses", expense));
+    debts.forEach((expense) => registerExpense("debts", expense));
+
+    const currentMonthKey = getCurrentMonthKey();
+
+    return Array.from(buckets.entries())
+      .map(([monthKey, bucket]) => {
+        const combined = [...bucket.monthlyBills, ...bucket.dailyExpenses, ...bucket.debts];
+        if (!combined.length) {
+          return null;
+        }
+
+        const totals = computeTotalsFromExpenses(combined);
+        const isCurrentMonth = monthKey === currentMonthKey;
+
+        return {
+          id: `synthetic-${monthKey}`,
+          periodKey: monthKey,
+          periodLabel: isCurrentMonth
+            ? `${createMonthLabel(monthKey)} (em andamento)`
+            : createMonthLabel(monthKey),
+          periodStart: startOfMonthFromKey(monthKey).toISOString(),
+          periodEnd: endOfMonthFromKey(monthKey).toISOString(),
+          totals,
+          monthlyBills: bucket.monthlyBills,
+          dailyExpenses: bucket.dailyExpenses,
+          debts: bucket.debts,
+          createdAt: new Date().toISOString(),
+        } satisfies ExpenseHistoryEntry;
+      })
+      .filter((entry): entry is ExpenseHistoryEntry => entry !== null);
+  }, [dailyExpenses, debts, isHydrated, monthlyBills]);
+
+  const historyTimelineEntries = useMemo(() => {
+    if (!expenseDerivedHistory.length) {
+      return historyEntries;
+    }
+
+    const persistedByKey = new Map(historyEntries.map((entry) => [entry.periodKey, entry]));
+    const merged = [...historyEntries];
+    const currentMonthKey = getCurrentMonthKey();
+
+    expenseDerivedHistory.forEach((entry) => {
+      const existingIndex = merged.findIndex((item) => item.periodKey === entry.periodKey);
+      if (existingIndex === -1) {
+        merged.push(entry);
+        return;
+      }
+
+      const existing = merged[existingIndex];
+      const preferSynthetic =
+        entry.periodKey === currentMonthKey ||
+        new Date(entry.createdAt).getTime() >= new Date(existing.createdAt).getTime();
+
+      if (preferSynthetic) {
+        merged[existingIndex] = entry;
+      }
+    });
+
+    return merged;
+  }, [expenseDerivedHistory, historyEntries]);
+
+  const filteredHistoryEntries = useMemo(() => {
+    if (!historyTimelineEntries.length) {
+      return [] as ExpenseHistoryEntry[];
+    }
+
+    const sorted = [...historyTimelineEntries].sort(
       (a, b) => new Date(b.periodStart).getTime() - new Date(a.periodStart).getTime()
     );
 
@@ -720,7 +880,7 @@ export default function FinanceControl() {
       const entryDate = new Date(entry.periodEnd);
       return entryDate >= normalizedStart && entryDate <= normalizedEnd;
     });
-  }, [historyEntries, historyPeriod, historyStartDate, historyEndDate]);
+  }, [historyTimelineEntries, historyPeriod, historyStartDate, historyEndDate]);
 
   const historyAggregateTotals = useMemo(
     () =>
@@ -780,6 +940,9 @@ export default function FinanceControl() {
     }
 
     ensureCurrentMonth();
+    if (setExpenses === setDailyExpenses) {
+      ensureCurrentDay();
+    }
 
     setExpenses((current) =>
       current.map((expense) => {
@@ -850,6 +1013,8 @@ export default function FinanceControl() {
       dueDate: nextInstallment ? getDueDateForInstallment(nextInstallment) : newExpense.dueDate,
       paidDate: sanitizedAmountPaid >= newExpense.amount ? new Date() : undefined,
       category: newExpense.category,
+      subcategory: newExpense.subcategory,
+      description: newExpense.description,
       installment: nextInstallment,
     };
 
@@ -864,6 +1029,9 @@ export default function FinanceControl() {
     }
 
     ensureCurrentMonth();
+    if (setExpenses === setDailyExpenses) {
+      ensureCurrentDay();
+    }
     setExpenses((current) => current.filter((expense) => expense.id !== id));
   };
 
