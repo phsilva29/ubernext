@@ -1,5 +1,5 @@
 -- Create despesas table
-CREATE TABLE public.despesas (
+CREATE TABLE IF NOT EXISTS public.despesas (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     categoria VARCHAR(100) NOT NULL,
@@ -15,33 +15,53 @@ CREATE TABLE public.despesas (
 -- Enable RLS
 ALTER TABLE public.despesas ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policies
-CREATE POLICY "Users can view their own despesas"
-ON public.despesas
-FOR SELECT
-USING (auth.uid() = user_id);
+-- Create RLS policies (only if they do not exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'despesas' AND policyname = 'Users can view their own despesas'
+    ) THEN
+        CREATE POLICY "Users can view their own despesas"
+        ON public.despesas
+        FOR SELECT
+        USING (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can insert their own despesas"
-ON public.despesas
-FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'despesas' AND policyname = 'Users can insert their own despesas'
+    ) THEN
+        CREATE POLICY "Users can insert their own despesas"
+        ON public.despesas
+        FOR INSERT
+        WITH CHECK (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can update their own despesas"
-ON public.despesas
-FOR UPDATE
-USING (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'despesas' AND policyname = 'Users can update their own despesas'
+    ) THEN
+        CREATE POLICY "Users can update their own despesas"
+        ON public.despesas
+        FOR UPDATE
+        USING (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can delete their own despesas"
-ON public.despesas
-FOR DELETE
-USING (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'despesas' AND policyname = 'Users can delete their own despesas'
+    ) THEN
+        CREATE POLICY "Users can delete their own despesas"
+        ON public.despesas
+        FOR DELETE
+        USING (auth.uid() = user_id);
+    END IF;
+END;$$;
 
 -- Create updated_at trigger
+DROP TRIGGER IF EXISTS update_despesas_updated_at ON public.despesas;
 CREATE TRIGGER update_despesas_updated_at
 BEFORE UPDATE ON public.despesas
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Create indexes for better performance
-CREATE INDEX idx_despesas_user_id ON public.despesas(user_id);
-CREATE INDEX idx_despesas_data ON public.despesas(data);
-CREATE INDEX idx_despesas_categoria ON public.despesas(categoria);
+CREATE INDEX IF NOT EXISTS idx_despesas_user_id ON public.despesas(user_id);
+CREATE INDEX IF NOT EXISTS idx_despesas_data ON public.despesas(data);
+CREATE INDEX IF NOT EXISTS idx_despesas_categoria ON public.despesas(categoria);

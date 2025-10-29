@@ -1,5 +1,5 @@
 -- Criar tabela para armazenar as viagens dos usuários
-CREATE TABLE public.viagens (
+CREATE TABLE IF NOT EXISTS public.viagens (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
   data DATE NOT NULL,
@@ -18,25 +18,44 @@ CREATE TABLE public.viagens (
 ALTER TABLE public.viagens ENABLE ROW LEVEL SECURITY;
 
 -- Criar políticas RLS para que usuários vejam apenas suas próprias viagens
-CREATE POLICY "Usuários podem ver suas próprias viagens" 
-ON public.viagens 
-FOR SELECT 
-USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'viagens' AND policyname = 'Usuários podem ver suas próprias viagens'
+  ) THEN
+    CREATE POLICY "Usuários podem ver suas próprias viagens" 
+    ON public.viagens 
+    FOR SELECT 
+    USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Usuários podem criar suas próprias viagens" 
-ON public.viagens 
-FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'viagens' AND policyname = 'Usuários podem criar suas próprias viagens'
+  ) THEN
+    CREATE POLICY "Usuários podem criar suas próprias viagens" 
+    ON public.viagens 
+    FOR INSERT 
+    WITH CHECK (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Usuários podem atualizar suas próprias viagens" 
-ON public.viagens 
-FOR UPDATE 
-USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'viagens' AND policyname = 'Usuários podem atualizar suas próprias viagens'
+  ) THEN
+    CREATE POLICY "Usuários podem atualizar suas próprias viagens" 
+    ON public.viagens 
+    FOR UPDATE 
+    USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Usuários podem deletar suas próprias viagens" 
-ON public.viagens 
-FOR DELETE 
-USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'viagens' AND policyname = 'Usuários podem deletar suas próprias viagens'
+  ) THEN
+    CREATE POLICY "Usuários podem deletar suas próprias viagens" 
+    ON public.viagens 
+    FOR DELETE 
+    USING (auth.uid() = user_id);
+  END IF;
+END;$$;
 
 -- Criar função para atualizar timestamps automaticamente
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
@@ -48,13 +67,14 @@ END;
 $$ LANGUAGE plpgsql SET search_path = public;
 
 -- Criar trigger para atualizar updated_at automaticamente
+DROP TRIGGER IF EXISTS update_viagens_updated_at ON public.viagens;
 CREATE TRIGGER update_viagens_updated_at
 BEFORE UPDATE ON public.viagens
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Criar tabela de perfis de usuário
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL UNIQUE,
   nome TEXT,
@@ -67,22 +87,38 @@ CREATE TABLE public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas RLS para perfis
-CREATE POLICY "Usuários podem ver seus próprios perfis" 
-ON public.profiles 
-FOR SELECT 
-USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'Usuários podem ver seus próprios perfis'
+  ) THEN
+    CREATE POLICY "Usuários podem ver seus próprios perfis" 
+    ON public.profiles 
+    FOR SELECT 
+    USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Usuários podem criar seus próprios perfis" 
-ON public.profiles 
-FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'Usuários podem criar seus próprios perfis'
+  ) THEN
+    CREATE POLICY "Usuários podem criar seus próprios perfis" 
+    ON public.profiles 
+    FOR INSERT 
+    WITH CHECK (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Usuários podem atualizar seus próprios perfis" 
-ON public.profiles 
-FOR UPDATE 
-USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'Usuários podem atualizar seus próprios perfis'
+  ) THEN
+    CREATE POLICY "Usuários podem atualizar seus próprios perfis" 
+    ON public.profiles 
+    FOR UPDATE 
+    USING (auth.uid() = user_id);
+  END IF;
+END;$$;
 
 -- Trigger para atualizar updated_at na tabela profiles
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at
 BEFORE UPDATE ON public.profiles
 FOR EACH ROW
@@ -106,6 +142,7 @@ END;
 $$;
 
 -- Trigger para criar perfil automaticamente
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW
